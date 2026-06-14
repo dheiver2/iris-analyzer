@@ -1,14 +1,15 @@
-# Iris Analyzer (educacional)
+# Iris Analyzer
 
-Abre a webcam, tira uma foto e analisa a íris usando técnicas de visão
-computacional inspiradas na **iridologia** (cores, padrões e textura).
+Aplicativo desktop para **análise de imagem da íris** (bem-estar e
+autoconhecimento). Captura pela webcam com **captura guiada**, segmenta a íris,
+extrai características e gera um **laudo em PDF**.
 
 > ⚠️ **Aviso importante**
 > A iridologia **não é reconhecida pela ciência** como método de diagnóstico.
 > Revisões sistemáticas (ex.: Ernst, 2000) concluíram que ela não detecta
-> doenças de forma confiável. Este projeto é **educacional/experimental**:
-> extrai características objetivas da imagem e as descreve. **Nada aqui é
-> diagnóstico médico.** Procure sempre um profissional de saúde.
+> doenças de forma confiável. Este projeto é **educacional/bem-estar**: extrai
+> características objetivas de imagem e as descreve. **Nada aqui é diagnóstico
+> médico.** Procure sempre um profissional de saúde.
 
 ## Instalação
 
@@ -17,54 +18,45 @@ cd iris-analyzer
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+
+# Modelo do MediaPipe (necessário; ~3,7 MB)
+curl -sL -o face_landmarker.task https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
 ```
-
-O projeto tem **duas versões**:
-
-| | V1 (`app.py`) | V2 (`app_v2.py`) — recomendada |
-|---|---|---|
-| Detecção da íris | Círculos de Hough (frágil) | **MediaPipe FaceLandmarker** (478 landmarks, sub-pixel) |
-| Robustez a ângulo/luz | baixa | alta |
-| Normalização | — | **Daugman rubber-sheet** (íris desenrolada em polar) |
-| Features | bordas + cor HSV | **Gabor + LBP + GLCM + cor Lab** |
-| Qualidade da foto | — | nitidez (Laplaciano) + reflexos |
 
 ## Uso
 
 ```bash
-# V2 (recomendada): webcam (ESPAÇO foto, ESC cancela) -> análise
-python app_v2.py
-python app_v2.py --imagem olho.jpg   # ou imagem existente
-
-# V1 (protótipo simples)
-python app.py
+python3 desktop_app.py
 ```
 
 No macOS, autorize o acesso à câmera em
 *Ajustes → Privacidade e Segurança → Câmera*.
 
-> **Modelo:** a V2 usa `face_landmarker.task` (MediaPipe). Se faltar, baixe:
-> ```bash
-> curl -sL -o face_landmarker.task https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
-> ```
+Com a **captura guiada** ligada, encaixe o rosto no oval; quando a imagem está
+boa (íris grande, nítida, centralizada, sem reflexo) o app captura e analisa
+sozinho. Preencha os dados do cliente e clique em **Gerar Laudo PDF**.
 
-## O que a V2 gera
+## Como funciona
 
-- `*_anotada.jpg` — íris/pupila/landmarks marcados
-- `*_daugman_direito.jpg` / `*_daugman_esquerdo.jpg` — íris normalizada (polar)
-- Relatório no terminal: cor (Lab), Gabor, LBP, GLCM, densidade de fibras,
-  nitidez, % de reflexo e checagem de qualidade
+- **Segmentação** da íris/pupila com **MediaPipe FaceLandmarker** (478 landmarks)
+- **Pupila real** detectada por limiar + circularidade; **CLAHE** para iluminação
+- **Normalização de Daugman** (íris desenrolada em coordenadas polares)
+- **Features**: cor (Lab), Gabor, LBP, GLCM, nitidez, reflexo
+- **Marcas**: lacunas como blobs + fibras via **filtro de Frangi**; **mapa de calor**
+- **Mapa de zonas** (relógio de 12 setores da iridologia tradicional) com
+  máscara de pálpebra/cílio e limiar absoluto — *sem valor diagnóstico*
 
 ## Arquivos
 
-- `capture.py` — captura pela webcam
-- `iris_segmentation.py` — **V2** segmentação com MediaPipe
-- `iris_features.py` — **V2** Daugman + features (Gabor/LBP/GLCM/Lab/qualidade)
-- `app_v2.py` — **V2** fluxo principal
-- `iris_analysis.py` / `app.py` — V1 (protótipo)
+- `desktop_app.py` — aplicativo principal (PyQt6)
+- `iris_segmentation.py` — segmentação da íris/pupila (MediaPipe)
+- `iris_features.py` — Daugman + features + qualidade
+- `iris_advanced.py` — pupila real, CLAHE, Frangi, lacunas, heatmap
+- `iris_map.py` — mapa de zonas (iridologia)
+- `captura_guiada.py` — guia de captura e auto-disparo por qualidade
+- `pdf_report.py` — geração do laudo PDF
 
 ## Boas fotos
 
 Olho centralizado, bem aberto, boa iluminação difusa (sem flash direto),
 câmera próxima e foco nítido na íris.
-# iris-analyzer
