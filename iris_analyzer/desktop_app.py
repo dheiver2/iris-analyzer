@@ -322,6 +322,14 @@ class MainWindow(QMainWindow):
 
     # ---- Loop de camera ----
     def _tick(self):
+        # Blindagem: PyQt6 encerra o app a qualquer excecao nao tratada num
+        # slot/timer. Capturamos tudo aqui para o app nunca fechar sozinho.
+        try:
+            self._tick_inner()
+        except Exception:
+            logging.getLogger("iris_analyzer").exception("Erro no loop de camera")
+
+    def _tick_inner(self):
         if self.cap is None:
             self.cap = cv2.VideoCapture(0)
             if not self.cap.isOpened():
@@ -379,18 +387,23 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Sem olhos detectados",
                                 "Aproxime o rosto da câmera e tente novamente.")
             return
-        self._capturado = (self._frame_atual.copy(), self._olhos, self._feats)
-        frame, olhos, feats = self._capturado
-        # Refino sub-pixel da borda da iris (Daugman) — so na captura
-        for o in olhos:
-            try:
-                o.raio_iris = refinar_iris(frame, o.centro, o.raio_iris)
-            except Exception:
-                pass
-        cards = {"direito": self.card_dir, "esquerdo": self.card_esq}
-        for o, f in zip(olhos, feats):
-            cards[o.lado].atualizar(o, f, frame)
-        self.btn_pdf.setEnabled(True)
+        try:
+            self._capturado = (self._frame_atual.copy(), self._olhos, self._feats)
+            frame, olhos, feats = self._capturado
+            # Refino sub-pixel da borda da iris (Daugman) — so na captura
+            for o in olhos:
+                try:
+                    o.raio_iris = refinar_iris(frame, o.centro, o.raio_iris)
+                except Exception:
+                    pass
+            cards = {"direito": self.card_dir, "esquerdo": self.card_esq}
+            for o, f in zip(olhos, feats):
+                cards[o.lado].atualizar(o, f, frame)
+            self.btn_pdf.setEnabled(True)
+        except Exception:
+            logging.getLogger("iris_analyzer").exception("Erro ao capturar/analisar")
+            QMessageBox.warning(self, "Falha na análise",
+                                "Não foi possível analisar esta captura. Tente novamente.")
 
     def gerar_laudo(self):
         if not self._capturado:
@@ -401,6 +414,13 @@ class MainWindow(QMainWindow):
             "PDF (*.pdf)")
         if not destino:
             return
+        try:
+            self._gerar_laudo_impl(destino, frame, olhos, feats)
+        except Exception as e:
+            logging.getLogger("iris_analyzer").exception("Erro ao gerar laudo")
+            QMessageBox.critical(self, "Erro", f"Falha ao gerar o laudo:\n{e}")
+
+    def _gerar_laudo_impl(self, destino, frame, olhos, feats):
         base = os.path.splitext(destino)[0]
         anot = frame.copy()
         olhos_info = []
@@ -461,6 +481,14 @@ def main():
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
     log = logging.getLogger("iris_analyzer")
+
+    # Rede de seguranca: nenhuma excecao nao tratada deve encerrar o app.
+    import sys
+
+    def _hook(exc_type, exc, tb):
+        log.error("Excecao nao tratada", exc_info=(exc_type, exc, tb))
+    sys.excepthook = _hook
+
     app = QApplication([])
     app.setStyle("Fusion")
     app.setFont(QFont("Helvetica Neue", 10))
