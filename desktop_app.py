@@ -32,6 +32,7 @@ from iris_features import extrair_features, normalizar_daugman
 from iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
 from captura_guiada import avaliar, desenhar_guia, FRAMES_ESTAVEL
 from iris_advanced import detectar_pupila, heatmap_iris
+from iris_quality import avaliar_qualidade
 from pdf_report import gerar_pdf, DadosCliente
 
 # Paleta
@@ -133,6 +134,9 @@ class CardOlho(QFrame):
         # pupila REAL (em vez de estimar) -> normalizacao mais precisa
         rp = detectar_pupila(frame, olho.centro, olho.raio_iris)
 
+        # qualidade multi-fator (foco/oclusao/reflexo/angulo/dilatacao/tamanho)
+        q = avaliar_qualidade(frame, olho, rp)
+
         # mapa de calor das marcas (lacunas + fibras)
         hm = heatmap_iris(frame, olho.centro, olho.raio_iris, rp)
         hm = cv2.resize(hm, (150, 150), interpolation=cv2.INTER_CUBIC)
@@ -166,10 +170,15 @@ class CardOlho(QFrame):
 
         trama = "densa" if f.densidade_fibras > 0.10 else "lisa"
         textura = "uniforme" if f.glcm_homogeneidade > 0.5 else "com variações"
-        qual = "Boa" if f.qualidade_ok else "Baixa — aproxime/ilumine"
+        cor_q = {"ruim": "#c25", "regular": "#c84", "boa": "#7a9",
+                 "excelente": "#5b8"}.get(q.nivel, MUTED)
         self.metricas.setText(
-            f"Cor: {f.cor_predominante} · Trama: {trama} · Textura: {textura} · "
-            f"Nitidez: {f.nitidez:.0f} · Reflexo: {f.reflexo_pct:.1f}% · Qualidade: {qual}"
+            f"<span style='color:{cor_q};font-weight:600'>Qualidade {q.score:.0f}/100 "
+            f"({q.nivel})</span><br>"
+            f"<span style='color:{MUTED};font-size:10px'>foco {q.foco:.2f} · "
+            f"oclusão {q.oclusao*100:.0f}% · reflexo {q.reflexo*100:.1f}% · "
+            f"ângulo {q.angulo:.2f} · dilatação {q.dilatacao:.2f}</span><br>"
+            f"Cor: {f.cor_predominante} · Trama: {trama} · Textura: {textura}"
         )
         self._f, self._olho, self._zonas = f, olho, zonas
 
@@ -400,6 +409,7 @@ class MainWindow(QMainWindow):
             zoom_p = f"{base}_zoom_{o.lado}.jpg"
             cv2.imwrite(zoom_p, cv2.resize(frame[y0:y1, x0:x1], (300, 300)))
             rp = detectar_pupila(frame, o.centro, o.raio_iris)
+            q = avaliar_qualidade(frame, o, rp)
             daug_p = f"{base}_daugman_{o.lado}.jpg"
             cv2.imwrite(daug_p, heatmap_iris(frame, o.centro, o.raio_iris, rp))
             zonas = analisar_zonas(frame, o.centro, o.raio_iris, rp,
@@ -416,6 +426,7 @@ class MainWindow(QMainWindow):
                 "nitidez": f"{f.nitidez:.0f}", "reflexo": f.reflexo_pct,
                 "qualidade": f.qualidade_ok, "zoom_path": zoom_p, "daugman_path": daug_p,
                 "mapa_path": mapa_p, "zonas": tops,
+                "qualidade_score": f"{q.score:.0f}/100 ({q.nivel})",
             })
         anot_p = f"{base}_captura.jpg"
         cv2.imwrite(anot_p, anot)

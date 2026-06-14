@@ -45,6 +45,18 @@ def avaliar(frame, olhos, feats) -> tuple[list[Criterio], bool]:
     crit.append(Criterio("Sem reflexo", refl <= REFLEXO_MAX,
                          "Evite luz direta/flash"))
 
+    # Angulo (off-angle): iris frontal e ~circular; de lado vira elipse.
+    ang_ok = True
+    for o in olhos:
+        pts = getattr(o, "pontos_iris", None)
+        if pts is not None and len(pts) >= 4:
+            ex = float(pts[:, 0].max() - pts[:, 0].min())
+            ey = float(pts[:, 1].max() - pts[:, 1].min())
+            if max(ex, ey) > 1e-6 and min(ex, ey) / max(ex, ey) < 0.72:
+                ang_ok = False
+    crit.append(Criterio("Olhe de frente", ang_ok and len(olhos) > 0,
+                         "Encare a camera de frente"))
+
     centralizado = False
     if olhos:
         cx = np.mean([o.centro[0] for o in olhos]) / w

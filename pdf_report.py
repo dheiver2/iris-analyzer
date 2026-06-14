@@ -123,12 +123,12 @@ def gerar_pdf(
             el.append(Spacer(1, 2 * mm))
 
         carac = [
+            ["Qualidade da imagem (0-100)", o.get("qualidade_score", "—")],
             ["Cor predominante", o.get("cor", "—")],
             ["Trama de fibras", o.get("trama", "—")],
             ["Textura", o.get("textura", "—")],
             ["Nitidez do foco", str(o.get("nitidez", "—"))],
             ["Reflexo de luz", f"{o.get('reflexo', '—')}%"],
-            ["Qualidade da imagem", "Boa" if o.get("qualidade") else "Baixa"],
         ]
         tc = Table(carac, colWidths=[55 * mm, 95 * mm])
         tc.setStyle(TableStyle([

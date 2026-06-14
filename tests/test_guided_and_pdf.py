@@ -16,10 +16,10 @@ def _feat(nitidez, reflexo):
     return types.SimpleNamespace(nitidez=nitidez, reflexo_pct=reflexo)
 
 
-def test_avaliar_cinco_criterios():
+def test_avaliar_criterios():
     frame = np.zeros((480, 640, 3), np.uint8)
     crit, ok = avaliar(frame, [], [])
-    assert len(crit) == 5
+    assert len(crit) == 6
     assert ok is False                  # sem olhos -> nao ok
 
 

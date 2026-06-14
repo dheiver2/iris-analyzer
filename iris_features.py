@@ -32,13 +32,24 @@ class FeaturesIris:
 
 
 def remover_reflexo(imagem_bgr, centro, r_iris) -> np.ndarray:
-    """Inpainting dos reflexos especulares (pontos brancos) na regiao da iris."""
+    """Inpainting dos reflexos especulares (pontos brancos) na regiao da iris.
+
+    Usa limiar ADAPTATIVO: reflexos sao detectados como pixels muito acima do
+    percentil 99 do brilho da propria iris (robusto a cor/iluminacao), em vez
+    de um limiar fixo. Fundamentado na literatura de remocao de reflexo
+    especular em imagens de iris.
+    """
+    validar_imagem(imagem_bgr, "imagem_bgr")
     h, w = imagem_bgr.shape[:2]
     c = (int(round(centro[0])), int(round(centro[1])))
     roi = np.zeros((h, w), np.uint8)
     cv2.circle(roi, c, int(round(r_iris)), 255, -1)
     gray = cv2.cvtColor(imagem_bgr, cv2.COLOR_BGR2GRAY)
-    brilho = ((gray > 230).astype(np.uint8) * 255) & roi
+    vals = gray[roi > 0]
+    if vals.size == 0:
+        return imagem_bgr
+    limiar = float(np.clip(np.percentile(vals, 99) + 8, 210, 252))
+    brilho = (((gray > limiar).astype(np.uint8) * 255) & roi)
     if np.count_nonzero(brilho) == 0:
         return imagem_bgr
     brilho = cv2.dilate(brilho, np.ones((3, 3), np.uint8), iterations=1)

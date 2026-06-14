@@ -43,8 +43,18 @@ sozinho. Preencha os dados do cliente e clique em **Gerar Laudo PDF**.
 - **Normalização de Daugman** (íris desenrolada em coordenadas polares)
 - **Features**: cor (Lab), Gabor, LBP, GLCM, nitidez, reflexo
 - **Marcas**: lacunas como blobs + fibras via **filtro de Frangi**; **mapa de calor**
+- **Qualidade multi-fator** (0–100): foco por alta-frequência (FFT), oclusão,
+  reflexo especular (limiar adaptativo), off-angle, dilatação pupilar e tamanho
 - **Mapa de zonas** (relógio de 12 setores da iridologia tradicional) com
   máscara de pálpebra/cílio e limiar absoluto — *sem valor diagnóstico*
+
+### Base nos métodos da literatura
+
+A avaliação de qualidade segue os fatores consagrados em reconhecimento de íris
+(foco/desfoco, oclusão, reflexo especular, ângulo, dilatação, contagem de pixels):
+- Daugman, *How Iris Recognition Works* (2004) — foco por energia de alta frequência
+- Kalka et al. — estimação e fusão de fatores de qualidade da íris
+- Literatura de remoção de reflexo especular em imagens de íris (limiar adaptativo)
 
 ## Arquivos
 
@@ -52,6 +62,7 @@ sozinho. Preencha os dados do cliente e clique em **Gerar Laudo PDF**.
 - `iris_segmentation.py` — segmentação da íris/pupila (MediaPipe)
 - `iris_features.py` — Daugman + features + qualidade
 - `iris_advanced.py` — pupila real, CLAHE, Frangi, lacunas, heatmap
+- `iris_quality.py` — qualidade multi-fator (foco/oclusão/reflexo/ângulo/…)
 - `iris_map.py` — mapa de zonas (iridologia)
 - `captura_guiada.py` — guia de captura e auto-disparo por qualidade
 - `pdf_report.py` — geração do laudo PDF
