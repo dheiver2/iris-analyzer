@@ -32,6 +32,16 @@ python3 run.py
 No macOS, autorize o acesso à câmera em
 *Ajustes → Privacidade e Segurança → Câmera*.
 
+### App com ícone (macOS)
+
+Para criar **"Iris Analyzer.app"** (com ícone) na Área de Trabalho:
+
+```bash
+bash packaging/build_macos_app.sh
+```
+
+Primeira execução: clique com o botão direito no app → **Abrir** (app não assinado).
+
 Com a **captura guiada** ligada, encaixe o rosto no oval; quando a imagem está
 boa (íris grande, nítida, centralizada, sem reflexo) o app captura e analisa
 sozinho. Preencha os dados do cliente e clique em **Gerar Laudo PDF**.
