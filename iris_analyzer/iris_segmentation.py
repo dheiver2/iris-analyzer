@@ -49,10 +49,27 @@ class Olho:
 
 
 def _circulo_de_pontos(pts: np.ndarray) -> tuple[tuple[float, float], float]:
-    """Centro = media; raio = distancia media ao centro."""
-    c = pts.mean(axis=0)
-    r = float(np.linalg.norm(pts - c, axis=1).mean())
-    return (float(c[0]), float(c[1])), r
+    """Ajuste de circulo por minimos quadrados (algebrico, Kasa).
+
+    Mais preciso que a media simples: minimiza o erro algebrico
+    (x-a)^2+(y-b)^2 = R^2 sobre os landmarks de iris. Cai para a media se
+    o sistema for mal-condicionado.
+    """
+    x, y = pts[:, 0], pts[:, 1]
+    try:
+        A = np.column_stack([2 * x, 2 * y, np.ones(len(x))])
+        b = x ** 2 + y ** 2
+        sol, *_ = np.linalg.lstsq(A, b, rcond=None)
+        a, c, d = sol
+        r = float(np.sqrt(max(d + a * a + c * c, 1e-6)))
+        # sanidade: centro perto da media e raio plausivel
+        cm = pts.mean(axis=0)
+        if np.hypot(a - cm[0], c - cm[1]) < r and r > 1.0:
+            return (float(a), float(c)), r
+    except np.linalg.LinAlgError:
+        pass
+    cm = pts.mean(axis=0)
+    return (float(cm[0]), float(cm[1])), float(np.linalg.norm(pts - cm, axis=1).mean())
 
 
 def criar_landmarker() -> FaceLandmarker:

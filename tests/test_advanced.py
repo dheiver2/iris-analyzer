@@ -4,8 +4,33 @@ import pytest
 
 from iris_analyzer.iris_advanced import (
     detectar_pupila, realcar_clahe, fibras_frangi, detectar_lacunas, heatmap_iris,
+    refinar_iris,
 )
+from iris_analyzer.iris_segmentation import _circulo_de_pontos
 from iris_analyzer.validation import ImagemInvalidaError, GeometriaInvalidaError
+
+
+def test_circulo_fit_exato():
+    cx, cy, R = 100.0, 120.0, 50.0
+    pts = np.array([[cx - R, cy], [cx + R, cy], [cx, cy - R], [cx, cy + R]], float)
+    (c, r) = _circulo_de_pontos(pts)
+    assert abs(c[0] - cx) < 0.5 and abs(c[1] - cy) < 0.5
+    assert abs(r - R) < 0.5
+
+
+def test_refino_borda_converge():
+    img = np.full((240, 240, 3), 235, np.uint8)
+    cv2.circle(img, (120, 120), 60, (90, 110, 80), -1)
+    cv2.circle(img, (120, 120), 24, (15, 15, 15), -1)
+    for palpite in (55, 60, 66):
+        assert abs(refinar_iris(img, (120, 120), palpite) - 60) < 3.0
+
+
+def test_refino_valida_entrada():
+    with pytest.raises(ImagemInvalidaError):
+        refinar_iris(None, (10, 10), 5)
+    with pytest.raises(GeometriaInvalidaError):
+        refinar_iris(np.zeros((40, 40, 3), np.uint8), (20, 20), 0)
 
 
 def test_detectar_pupila_plausivel(iris_sintetica):

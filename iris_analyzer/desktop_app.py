@@ -31,7 +31,7 @@ from .iris_segmentation import segmentar_olhos, criar_landmarker, Olho
 from .iris_features import extrair_features
 from .iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
 from .captura_guiada import avaliar, desenhar_guia, FRAMES_ESTAVEL
-from .iris_advanced import detectar_pupila, heatmap_iris
+from .iris_advanced import detectar_pupila, heatmap_iris, refinar_iris
 from .iris_quality import avaliar_qualidade
 from .pdf_report import gerar_pdf, DadosCliente
 
@@ -381,6 +381,12 @@ class MainWindow(QMainWindow):
             return
         self._capturado = (self._frame_atual.copy(), self._olhos, self._feats)
         frame, olhos, feats = self._capturado
+        # Refino sub-pixel da borda da iris (Daugman) — so na captura
+        for o in olhos:
+            try:
+                o.raio_iris = refinar_iris(frame, o.centro, o.raio_iris)
+            except Exception:
+                pass
         cards = {"direito": self.card_dir, "esquerdo": self.card_esq}
         for o, f in zip(olhos, feats):
             cards[o.lado].atualizar(o, f, frame)

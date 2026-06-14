@@ -18,6 +18,54 @@ from skimage.filters import frangi
 from .validation import validar_imagem, validar_geometria, GeometriaInvalidaError
 
 
+def refinar_iris(imagem_bgr, centro, r_iris, busca=0.16, n_amostras=180) -> float:
+    """Refina o raio da iris pelo operador integro-diferencial (Daugman).
+
+    Procura o raio que maximiza |d/dr| da integral de contorno circular da
+    intensidade — i.e., a borda real iris/esclera detectada pelo gradiente da
+    imagem, com precisao sub-pixel. Amostra apenas os arcos laterais (onde a
+    esclera e visivel), evitando palpebra/cilio em cima e embaixo.
+    """
+    validar_imagem(imagem_bgr, "imagem_bgr")
+    if not (r_iris > 0):
+        raise GeometriaInvalidaError(f"r_iris deve ser > 0, recebido {r_iris!r}.")
+    gray = cv2.GaussianBlur(cv2.cvtColor(imagem_bgr, cv2.COLOR_BGR2GRAY), (3, 3), 0)
+    gray = gray.astype(np.float32)
+    h, w = gray.shape
+    cx, cy = float(centro[0]), float(centro[1])
+
+    base = np.linspace(-np.deg2rad(35), np.deg2rad(35), max(n_amostras // 2, 8))
+    thetas = np.concatenate([base, base + np.pi])
+    cos_t, sin_t = np.cos(thetas), np.sin(thetas)
+
+    r0 = max(3.0, r_iris * (1 - busca))
+    r1 = r_iris * (1 + busca)
+    raios = np.arange(r0, r1, 0.5)
+    if len(raios) < 5:
+        return float(r_iris)
+
+    integrais = []
+    for r in raios:
+        xs = np.clip(np.round(cx + r * cos_t).astype(int), 0, w - 1)
+        ys = np.clip(np.round(cy + r * sin_t).astype(int), 0, h - 1)
+        integrais.append(float(gray[ys, xs].mean()))
+    integrais = np.array(integrais)
+
+    k = np.array([1, 4, 6, 4, 1], np.float32); k /= k.sum()
+    # padding por replicacao (evita gradiente espurio nas bordas do sinal)
+    pad = len(k) // 2
+    ext = np.pad(integrais, pad, mode="edge")
+    suave = np.convolve(ext, k, mode="valid")
+    deriv = np.abs(np.gradient(suave))
+    deriv[:2] = 0.0; deriv[-2:] = 0.0          # ignora extremos da busca
+    if not np.any(deriv > 0):
+        return float(r_iris)
+    r_ref = float(raios[int(np.argmax(deriv))])
+    if abs(r_ref - r_iris) <= r_iris * busca:
+        return r_ref
+    return float(r_iris)
+
+
 def detectar_pupila(imagem_bgr, centro, r_iris) -> float:
     """Estima o raio real da pupila (disco escuro central). Fallback: 0.45*r."""
     validar_imagem(imagem_bgr, "imagem_bgr")

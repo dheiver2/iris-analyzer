@@ -38,7 +38,9 @@ sozinho. Preencha os dados do cliente e clique em **Gerar Laudo PDF**.
 
 ## Como funciona
 
-- **Segmentação** da íris/pupila com **MediaPipe FaceLandmarker** (478 landmarks)
+- **Segmentação** da íris/pupila com **MediaPipe FaceLandmarker** (478 landmarks),
+  com **ajuste de círculo por mínimos quadrados** e **refino de borda pelo
+  operador integro-diferencial de Daugman** (precisão sub-pixel)
 - **Pupila real** detectada por limiar + circularidade; **CLAHE** para iluminação
 - **Normalização de Daugman** (íris desenrolada em coordenadas polares)
 - **Features**: cor (Lab), Gabor, LBP, GLCM, nitidez, reflexo
