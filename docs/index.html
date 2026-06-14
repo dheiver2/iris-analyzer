@@ -42,6 +42,8 @@
   .shot{margin:50px 0;border:1px solid var(--border);border-radius:16px;overflow:hidden;
     background:var(--card)}
   .shot img{width:100%;display:block}
+  .gallery{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .gallery .shot{margin:0}
 
   section{padding:60px 0;border-top:1px solid var(--border)}
   .kicker{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
@@ -99,7 +101,7 @@
     </div>
   </div>
 
-  <div class="shot"><img src="assets/app.png" alt="Tela do aplicativo Iris Analyzer"></div>
+  <div class="shot"><img src="assets/use1.png" alt="Pessoa usando o Iris Analyzer com a íris detectada e análise em tempo real"></div>
 
 </div>
 
@@ -163,13 +165,15 @@
 <section id="uso">
   <div class="wrap">
     <div class="kicker">Em uso</div>
-    <h2>Pensado para a sua rotina de atendimento</h2>
-    <div class="shot" style="margin:24px 0 0">
-      <img src="assets/usage.png" alt="Profissional analisando a íris de um cliente">
+    <h2>Pessoas reais, análise em tempo real</h2>
+    <p class="muted" style="margin:0 0 24px;max-width:640px">
+      O cliente se posiciona na câmera, a íris é detectada automaticamente e a
+      análise aparece na hora — você conduz a sessão e entrega o laudo.</p>
+    <div class="gallery">
+      <div class="shot"><img src="assets/use1.png" alt="Cliente usando o software — análise da íris"></div>
+      <div class="shot"><img src="assets/use2.png" alt="Cliente usando o software — análise da íris"></div>
+      <div class="shot"><img src="assets/use3.png" alt="Cliente usando o software — análise da íris"></div>
     </div>
-    <p class="muted" style="margin-top:14px;font-size:14px">
-      O cliente se posiciona na câmera e a análise aparece em tempo real — você
-      conduz a sessão e entrega o laudo na hora.</p>
   </div>
 </section>
 
