@@ -6,7 +6,6 @@ Usa a Tasks API (modelo face_landmarker.task, 478 landmarks com iris).
 """
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 
 import cv2
@@ -19,7 +18,10 @@ from mediapipe.tasks.python.vision import (
     RunningMode,
 )
 
-_MODELO = os.path.join(os.path.dirname(__file__), "face_landmarker.task")
+import config
+from validation import validar_imagem, ModeloAusenteError
+
+_MODELO = str(config.MODELO_PATH)
 
 
 # Indices dos landmarks de iris no Face Mesh (refine_landmarks=True).
@@ -59,11 +61,10 @@ def criar_landmarker() -> FaceLandmarker:
 
 
 def _criar_landmarker() -> FaceLandmarker:
-    if not os.path.exists(_MODELO):
-        raise FileNotFoundError(
+    if not config.MODELO_PATH.exists():
+        raise ModeloAusenteError(
             f"Modelo nao encontrado: {_MODELO}. Baixe com:\n"
-            "  curl -sL -o face_landmarker.task https://storage.googleapis.com/"
-            "mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+            f"  curl -sL -o face_landmarker.task {config.MODELO_URL}"
         )
     opts = FaceLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=_MODELO),
@@ -81,6 +82,7 @@ def segmentar_olhos(
     Passe um ``landmarker`` reutilizavel (ver ``criar_landmarker``) para uso
     em tempo real; sem ele, um e criado/descartado a cada chamada (mais lento).
     """
+    validar_imagem(imagem_bgr, "imagem_bgr")
     h, w = imagem_bgr.shape[:2]
     rgb = cv2.cvtColor(imagem_bgr, cv2.COLOR_BGR2RGB)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)

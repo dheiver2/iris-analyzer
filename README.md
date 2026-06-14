@@ -20,7 +20,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Modelo do MediaPipe (necessário; ~3,7 MB)
-curl -sL -o face_landmarker.task https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
+python3 download_model.py
 ```
 
 ## Uso
@@ -55,6 +55,19 @@ sozinho. Preencha os dados do cliente e clique em **Gerar Laudo PDF**.
 - `iris_map.py` — mapa de zonas (iridologia)
 - `captura_guiada.py` — guia de captura e auto-disparo por qualidade
 - `pdf_report.py` — geração do laudo PDF
+
+## Desenvolvimento
+
+```bash
+pip install -r requirements.txt pytest
+pytest -q          # roda a suíte de testes
+```
+
+Estrutura de qualidade:
+- `config.py` — configuração central (sobrescreve por env `IRIS_*`)
+- `validation.py` — validações de entrada e exceções (`IrisError` e subclasses)
+- `tests/` — testes com pytest (validação, features, mapa, técnicas, PDF)
+- CI em `.github/workflows/tests.yml`
 
 ## Boas fotos
 

@@ -19,6 +19,7 @@ import numpy as np
 
 from iris_features import normalizar_daugman, remover_reflexo
 from iris_advanced import realcar_clahe, fibras_frangi
+from validation import validar_imagem, validar_geometria, validar_lado
 
 
 ZONAS_DIREITO = [
@@ -61,6 +62,9 @@ def _nivel(v: float, avaliavel: bool) -> str:
 
 
 def analisar_zonas(img, centro, r_iris, r_pupila, lado: str, contorno=None) -> list[Zona]:
+    validar_imagem(img, "img")
+    validar_lado(lado)
+    validar_geometria(centro, r_iris, r_pupila, img.shape)
     # Pre-processamento: remove reflexo + equaliza contraste (CLAHE).
     img = realcar_clahe(remover_reflexo(img, centro, r_iris))
     # Resolucao do mapa proporcional ao tamanho real da iris (evita ruido de

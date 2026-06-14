@@ -51,6 +51,13 @@ def gerar_pdf(
 ) -> str:
     """olhos_info: lista de dicts com chaves: lado, cor, trama, textura, nitidez,
     reflexo, qualidade, zoom_path, daugman_path."""
+    if not caminho_pdf or not str(caminho_pdf).lower().endswith(".pdf"):
+        raise ValueError(f"caminho_pdf deve terminar em .pdf: {caminho_pdf!r}.")
+    if not isinstance(olhos_info, list):
+        raise TypeError(f"olhos_info deve ser list, recebido {type(olhos_info)!r}.")
+    pasta = os.path.dirname(os.path.abspath(caminho_pdf))
+    if not os.path.isdir(pasta):
+        raise FileNotFoundError(f"Pasta de destino inexistente: {pasta}")
     s = _estilos()
     doc = SimpleDocTemplate(
         caminho_pdf, pagesize=A4,

@@ -15,9 +15,14 @@ import cv2
 import numpy as np
 from skimage.filters import frangi
 
+from validation import validar_imagem, validar_geometria, GeometriaInvalidaError
+
 
 def detectar_pupila(imagem_bgr, centro, r_iris) -> float:
     """Estima o raio real da pupila (disco escuro central). Fallback: 0.45*r."""
+    validar_imagem(imagem_bgr, "imagem_bgr")
+    if not (r_iris > 0):
+        raise GeometriaInvalidaError(f"r_iris deve ser > 0, recebido {r_iris!r}.")
     cx, cy = int(round(centro[0])), int(round(centro[1]))
     r = int(round(r_iris))
     h, w = imagem_bgr.shape[:2]
@@ -104,6 +109,8 @@ def detectar_lacunas(gray, mask=None):
 
 def heatmap_iris(imagem_bgr, centro, r_iris, r_pupila):
     """Mapa de calor continuo das marcas (lacunas+fibras) sobre a iris."""
+    validar_imagem(imagem_bgr, "imagem_bgr")
+    validar_geometria(centro, r_iris, r_pupila, imagem_bgr.shape)
     cx, cy = int(round(centro[0])), int(round(centro[1]))
     r = int(round(r_iris))
     h, w = imagem_bgr.shape[:2]

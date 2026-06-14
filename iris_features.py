@@ -13,6 +13,8 @@ import cv2
 import numpy as np
 from skimage.feature import local_binary_pattern, graycomatrix, graycoprops
 
+from validation import validar_imagem, validar_geometria
+
 
 @dataclass
 class FeaturesIris:
@@ -67,6 +69,10 @@ def normalizar_daugman(
     mascara de oclusao (True onde o ponto cai fora do olho = palpebra/cilio).
     Sem contorno, retorna apenas a imagem polar (compatibilidade).
     """
+    validar_imagem(imagem_bgr, "imagem_bgr")
+    validar_geometria(centro, r_iris, r_pupila, imagem_bgr.shape)
+    if altura < 2 or largura < 2:
+        raise ValueError(f"altura/largura do mapa polar invalidas: {altura}x{largura}.")
     cx, cy = centro
     h_img, w_img = imagem_bgr.shape[:2]
     out = np.zeros((altura, largura, 3), dtype=np.uint8)
@@ -132,6 +138,8 @@ def extrair_features(
     r_iris: float,
     r_pupila: float,
 ) -> FeaturesIris:
+    validar_imagem(imagem_bgr, "imagem_bgr")
+    validar_geometria(centro, r_iris, r_pupila, imagem_bgr.shape)
     h, w = imagem_bgr.shape[:2]
     c = (int(round(centro[0])), int(round(centro[1])))
 

@@ -24,6 +24,9 @@ from PyQt6.QtWidgets import (
     QFileDialog, QMessageBox, QSizePolicy, QCheckBox,
 )
 
+import logging
+
+import config
 from iris_segmentation import segmentar_olhos, criar_landmarker, Olho
 from iris_features import extrair_features, normalizar_daugman
 from iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
@@ -401,10 +404,27 @@ class MainWindow(QMainWindow):
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+    log = logging.getLogger("iris_analyzer")
     app = QApplication([])
     app.setFont(QFont("Helvetica", 10))
+
+    # Checagem de ambiente: modelo do MediaPipe presente?
+    if not config.MODELO_PATH.exists():
+        log.error("Modelo ausente: %s", config.MODELO_PATH)
+        QMessageBox.critical(
+            None, "Modelo ausente",
+            "O modelo do MediaPipe nao foi encontrado.\n\n"
+            "Baixe executando no terminal:\n    python3 download_model.py\n\n"
+            f"Esperado em: {config.MODELO_PATH}")
+        return
+
     win = MainWindow()
     win.show()
+    log.info("Iris Analyzer iniciado.")
     app.exec()
 
 
