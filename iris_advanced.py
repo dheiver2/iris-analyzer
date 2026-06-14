@@ -1,0 +1,129 @@
+"""Tecnicas avancadas de analise de imagem da iris (melhoram a PRECISAO da
+extracao de caracteristicas — nao a validade do mapa iridologico).
+
+- detectar_pupila: encontra a pupila real (disco escuro central) em vez de
+  estimar um raio fixo. Melhora muito a normalizacao de Daugman.
+- realcar_clahe: equalizacao adaptativa de contraste (ilumina\xe7\xe3o irregular).
+- fibras_frangi: filtro de Frangi (vesselness) realca a trama de fibras.
+- detectar_lacunas: lacunas/criptas como blobs (componentes conexos filtrados
+  por area e forma), nao apenas pixels escuros.
+- heatmap_iris: mapa de calor continuo das marcas sobre a propria iris.
+"""
+from __future__ import annotations
+
+import cv2
+import numpy as np
+from skimage.filters import frangi
+
+
+def detectar_pupila(imagem_bgr, centro, r_iris) -> float:
+    """Estima o raio real da pupila (disco escuro central). Fallback: 0.45*r."""
+    cx, cy = int(round(centro[0])), int(round(centro[1]))
+    r = int(round(r_iris))
+    h, w = imagem_bgr.shape[:2]
+    x0, y0 = max(0, cx - r), max(0, cy - r)
+    x1, y1 = min(w, cx + r), min(h, cy + r)
+    roi = imagem_bgr[y0:y1, x0:x1]
+    if roi.size == 0:
+        return max(r_iris * 0.45, 2.0)
+
+    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    # pupila = regiao mais escura; limiar pelo percentil baixo
+    thr = np.percentile(gray, 12)
+    escuro = (gray <= thr).astype(np.uint8) * 255
+    escuro = cv2.morphologyEx(escuro, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    escuro = cv2.morphologyEx(escuro, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+
+    cnts, _ = cv2.findContours(escuro, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cxr, cyr = cx - x0, cy - y0
+    melhor = None
+    for c in cnts:
+        (px, py), pr = cv2.minEnclosingCircle(c)
+        area = cv2.contourArea(c)
+        if pr < r * 0.12 or pr > r * 0.75:
+            continue
+        circ = area / (np.pi * pr * pr + 1e-6)        # circularidade
+        dist = np.hypot(px - cxr, py - cyr)
+        if circ > 0.55 and dist < r * 0.5:
+            if melhor is None or pr > melhor:
+                melhor = pr
+    if melhor is None:
+        return max(r_iris * 0.45, 2.0)
+    return float(np.clip(melhor, r_iris * 0.15, r_iris * 0.75))
+
+
+def realcar_clahe(imagem_bgr) -> np.ndarray:
+    """Equaliza contraste de forma adaptativa (CLAHE) no canal L (Lab)."""
+    lab = cv2.cvtColor(imagem_bgr, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+    l = clahe.apply(l)
+    return cv2.cvtColor(cv2.merge([l, a, b]), cv2.COLOR_LAB2BGR)
+
+
+def fibras_frangi(gray) -> np.ndarray:
+    """Resposta de Frangi (0-1): realca fibras/estruturas finas da iris."""
+    g = gray.astype(np.float32) / 255.0
+    resp = frangi(g, sigmas=range(1, 4), black_ridges=False)
+    m = resp.max()
+    return (resp / m) if m > 1e-9 else resp
+
+
+def detectar_lacunas(gray, mask=None):
+    """Detecta lacunas/criptas como blobs escuros. Retorna (mascara, lista).
+
+    lista = [(x, y, raio), ...] de cada lacuna detectada.
+    """
+    g = cv2.GaussianBlur(gray, (3, 3), 0)
+    # realca regioes mais escuras que a vizinhanca
+    fundo = cv2.GaussianBlur(g, (0, 0), max(3.0, gray.shape[1] / 24.0))
+    contraste = cv2.subtract(fundo, g)
+    _, binm = cv2.threshold(contraste, 18, 255, cv2.THRESH_BINARY)
+    if mask is not None:
+        binm = cv2.bitwise_and(binm, mask)
+    binm = cv2.morphologyEx(binm, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+
+    num, lbl, stats, cent = cv2.connectedComponentsWithStats(binm, 8)
+    out_mask = np.zeros_like(binm)
+    blobs = []
+    area_min = max(8, (gray.shape[0] * gray.shape[1]) // 4000)
+    for i in range(1, num):
+        area = stats[i, cv2.CC_STAT_AREA]
+        wlb, hlb = stats[i, cv2.CC_STAT_WIDTH], stats[i, cv2.CC_STAT_HEIGHT]
+        if area < area_min:
+            continue
+        aspecto = wlb / (hlb + 1e-6)
+        if aspecto < 0.35 or aspecto > 2.8:   # descarta riscos finos (cilio)
+            continue
+        out_mask[lbl == i] = 255
+        x, y = cent[i]
+        blobs.append((float(x), float(y), float(np.sqrt(area / np.pi))))
+    return out_mask, blobs
+
+
+def heatmap_iris(imagem_bgr, centro, r_iris, r_pupila):
+    """Mapa de calor continuo das marcas (lacunas+fibras) sobre a iris."""
+    cx, cy = int(round(centro[0])), int(round(centro[1]))
+    r = int(round(r_iris))
+    h, w = imagem_bgr.shape[:2]
+    x0, y0 = max(0, cx - r), max(0, cy - r)
+    x1, y1 = min(w, cx + r), min(h, cy + r)
+    roi = imagem_bgr[y0:y1, x0:x1]
+    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+
+    mask = np.zeros(gray.shape, np.uint8)
+    cv2.circle(mask, (cx - x0, cy - y0), r, 255, -1)
+    cv2.circle(mask, (cx - x0, cy - y0), int(r_pupila), 0, -1)
+
+    lac, _ = detectar_lacunas(gray, mask)
+    fib = (fibras_frangi(gray) * 255).astype(np.uint8)
+    energia = cv2.addWeighted(lac, 0.6, fib, 0.4, 0)
+    energia = cv2.GaussianBlur(energia, (0, 0), 3)
+    energia = cv2.bitwise_and(energia, mask)
+
+    cor = cv2.applyColorMap(energia, cv2.COLORMAP_JET)
+    out = roi.copy()
+    m3 = mask > 0
+    out[m3] = cv2.addWeighted(roi, 0.55, cor, 0.45, 0)[m3]
+    return out

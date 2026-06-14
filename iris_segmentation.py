@@ -1,0 +1,128 @@
+"""Segmentacao precisa da iris e da pupila usando MediaPipe FaceLandmarker.
+
+Retorna centro/raio da iris e da pupila em pixels, com precisao sub-pixel,
+robusto a inclinacao da cabeca e iluminacao. Muito superior ao Hough Circles.
+Usa a Tasks API (modelo face_landmarker.task, 478 landmarks com iris).
+"""
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+
+import cv2
+import numpy as np
+import mediapipe as mp
+from mediapipe.tasks.python import BaseOptions
+from mediapipe.tasks.python.vision import (
+    FaceLandmarker,
+    FaceLandmarkerOptions,
+    RunningMode,
+)
+
+_MODELO = os.path.join(os.path.dirname(__file__), "face_landmarker.task")
+
+
+# Indices dos landmarks de iris no Face Mesh (refine_landmarks=True).
+# Olho direito (do ponto de vista da pessoa) e esquerdo.
+_IRIS_RIGHT = [469, 470, 471, 472]
+_IRIS_LEFT = [474, 475, 476, 477]
+# Centros aproximados de iris fornecidos pelo modelo.
+_IRIS_RIGHT_CENTER = 468
+_IRIS_LEFT_CENTER = 473
+# Contorno da abertura do olho (palpebras) — para mascarar oclusao.
+_OLHO_DIR_CONTORNO = [33, 7, 163, 144, 145, 153, 154, 155, 133,
+                      173, 157, 158, 159, 160, 161, 246]
+_OLHO_ESQ_CONTORNO = [263, 249, 390, 373, 374, 380, 381, 382, 362,
+                      398, 384, 385, 386, 387, 388, 466]
+
+
+@dataclass
+class Olho:
+    lado: str                       # "direito" | "esquerdo"
+    centro: tuple[float, float]     # iris (x, y) sub-pixel
+    raio_iris: float
+    raio_pupila: float              # estimado
+    pontos_iris: np.ndarray         # 4 landmarks da borda da iris
+    contorno: np.ndarray | None = None  # poligono da abertura do olho (palpebras)
+
+
+def _circulo_de_pontos(pts: np.ndarray) -> tuple[tuple[float, float], float]:
+    """Centro = media; raio = distancia media ao centro."""
+    c = pts.mean(axis=0)
+    r = float(np.linalg.norm(pts - c, axis=1).mean())
+    return (float(c[0]), float(c[1])), r
+
+
+def criar_landmarker() -> FaceLandmarker:
+    """Cria um FaceLandmarker reutilizavel (use em loop de webcam)."""
+    return _criar_landmarker()
+
+
+def _criar_landmarker() -> FaceLandmarker:
+    if not os.path.exists(_MODELO):
+        raise FileNotFoundError(
+            f"Modelo nao encontrado: {_MODELO}. Baixe com:\n"
+            "  curl -sL -o face_landmarker.task https://storage.googleapis.com/"
+            "mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+        )
+    opts = FaceLandmarkerOptions(
+        base_options=BaseOptions(model_asset_path=_MODELO),
+        running_mode=RunningMode.IMAGE,
+        num_faces=1,
+    )
+    return FaceLandmarker.create_from_options(opts)
+
+
+def segmentar_olhos(
+    imagem_bgr: np.ndarray, landmarker: FaceLandmarker | None = None
+) -> list[Olho]:
+    """Detecta ambos os olhos e retorna a geometria de cada iris.
+
+    Passe um ``landmarker`` reutilizavel (ver ``criar_landmarker``) para uso
+    em tempo real; sem ele, um e criado/descartado a cada chamada (mais lento).
+    """
+    h, w = imagem_bgr.shape[:2]
+    rgb = cv2.cvtColor(imagem_bgr, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+
+    if landmarker is not None:
+        res = landmarker.detect(mp_image)
+    else:
+        with _criar_landmarker() as own:
+            res = own.detect(mp_image)
+
+    if not res.face_landmarks:
+        return []
+
+    lm = res.face_landmarks[0]
+
+    def px(idxs):
+        return np.array([[lm[i].x * w, lm[i].y * h] for i in idxs], dtype=np.float64)
+
+    olhos: list[Olho] = []
+    for lado, idxs, cont_idx in (
+        ("direito", _IRIS_RIGHT, _OLHO_DIR_CONTORNO),
+        ("esquerdo", _IRIS_LEFT, _OLHO_ESQ_CONTORNO),
+    ):
+        pts = px(idxs)
+        centro, r_iris = _circulo_de_pontos(pts)
+        # Pupila tipicamente ~0.4-0.5 do raio da iris em luz ambiente.
+        r_pup = max(r_iris * 0.45, 2.0)
+        contorno = px(cont_idx).astype(np.int32)
+        olhos.append(
+            Olho(lado=lado, centro=centro, raio_iris=r_iris,
+                 raio_pupila=r_pup, pontos_iris=pts, contorno=contorno)
+        )
+    return olhos
+
+
+def desenhar_olhos(imagem_bgr: np.ndarray, olhos: list[Olho]) -> np.ndarray:
+    out = imagem_bgr.copy()
+    for o in olhos:
+        c = (int(round(o.centro[0])), int(round(o.centro[1])))
+        cv2.circle(out, c, int(round(o.raio_iris)), (0, 255, 0), 2)
+        cv2.circle(out, c, int(round(o.raio_pupila)), (0, 0, 255), 1)
+        cv2.circle(out, c, 2, (255, 0, 0), 3)
+        for p in o.pontos_iris:
+            cv2.circle(out, (int(p[0]), int(p[1])), 2, (0, 255, 255), -1)
+    return out

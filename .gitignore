@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Saidas geradas
+foto.jpg
+snapshot_*.jpg
+laudo_*.pdf
+*_anotada.jpg
+*_daugman_*.jpg
+*_zoom_*.jpg
+*_mapa_*.jpg
+*_captura.jpg
+*_heat_*.jpg
+_*.jpg
+_*.pdf
+
+# Modelo do MediaPipe (baixar via script — ver README)
+face_landmarker.task
+
+# Sistema
+.DS_Store
