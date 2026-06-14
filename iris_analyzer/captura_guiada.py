@@ -68,38 +68,34 @@ def avaliar(frame, olhos, feats) -> tuple[list[Criterio], bool]:
     return crit, ok
 
 
-def desenhar_guia(frame, criterios, ok, progresso: float):
-    """Desenha o contorno do rosto, marcas dos olhos, checklist e progresso."""
+def desenhar_malha(frame, pontos, cor=(80, 200, 120)):
+    """Desenha a malha facial (face mesh) por triangulacao de Delaunay dos
+    478 landmarks do MediaPipe. ``pontos`` e um array Nx2 (px)."""
+    if pontos is None or len(pontos) < 3:
+        return frame
     h, w = frame.shape[:2]
-    cx, cy = w // 2, int(h * 0.44)
-    rx, ry = int(w * 0.20), int(h * 0.30)   # tamanho do rosto-alvo
-    cor_alvo = (0, 220, 0) if ok else (0, 180, 255)
+    subdiv = cv2.Subdiv2D((0, 0, w, h))
+    idx_de = {}
+    for i, (x, y) in enumerate(pontos):
+        if 0 <= x < w and 0 <= y < h:
+            subdiv.insert((float(x), float(y)))
+            idx_de[(round(float(x), 1), round(float(y), 1))] = i
+    for t in subdiv.getTriangleList():
+        p = [(t[0], t[1]), (t[2], t[3]), (t[4], t[5])]
+        if all(0 <= px < w and 0 <= py < h for px, py in p):
+            ip = [(int(px), int(py)) for px, py in p]
+            cv2.line(frame, ip[0], ip[1], cor, 1, cv2.LINE_AA)
+            cv2.line(frame, ip[1], ip[2], cor, 1, cv2.LINE_AA)
+            cv2.line(frame, ip[2], ip[0], cor, 1, cv2.LINE_AA)
+    return frame
 
-    # escurece fora do oval do rosto (vinheta) para guiar o olhar
-    overlay = frame.copy()
-    mask = overlay.copy()
-    cv2.ellipse(mask, (cx, cy), (rx, ry), 0, 0, 360, (0, 0, 0), -1)
-    escuro = cv2.addWeighted(frame, 0.5, frame * 0, 0.5, 0)
-    fora = frame.copy()
-    m = (mask.sum(axis=2) == 0)
-    fora[m] = escuro[m]
-    frame[:] = fora
 
-    # contorno do rosto
-    cv2.ellipse(frame, (cx, cy), (rx, ry), 0, 0, 360, cor_alvo, 3)
-    cv2.putText(frame, "Encaixe seu rosto aqui", (cx - 120, cy - ry - 14),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, cor_alvo, 2, cv2.LINE_AA)
+def desenhar_guia(frame, criterios, ok, progresso: float):
+    """Desenha apenas o checklist de qualidade e o progresso do auto-disparo
+    (sem guia de posicionamento do rosto)."""
+    h, w = frame.shape[:2]
 
-    # marcas onde os olhos devem ficar (linha dos olhos ~ 12% acima do centro)
-    ey = cy - int(ry * 0.18)
-    for ex in (cx - int(rx * 0.42), cx + int(rx * 0.42)):
-        cv2.circle(frame, (ex, ey), int(w * 0.025), cor_alvo, 2)
-        cv2.line(frame, (ex - 6, ey), (ex + 6, ey), cor_alvo, 1)
-        cv2.line(frame, (ex, ey - 6), (ex, ey + 6), cor_alvo, 1)
-    cv2.putText(frame, "olhos", (cx - 22, ey - int(w * 0.03)),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.4, cor_alvo, 1, cv2.LINE_AA)
-
-    # checklist (canto inferior esquerdo, p/ nao cobrir o titulo)
+    # checklist (canto inferior esquerdo)
     n = len(criterios)
     base_y = h - 24 * n - 14
     cv2.rectangle(frame, (8, base_y - 18), (300, h - 8), (0, 0, 0), -1)
@@ -112,12 +108,11 @@ def desenhar_guia(frame, criterios, ok, progresso: float):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, cor, 1, cv2.LINE_AA)
         y += 24
 
-    # anel de progresso do auto-disparo
+    # barra de progresso do auto-disparo (topo)
     if progresso > 0:
-        ang = int(360 * min(progresso, 1.0))
-        cv2.ellipse(frame, (cx, cy), (int(w * 0.20), int(h * 0.29)), -90, 0, ang,
-                    (0, 230, 0), 4)
+        bw = int(w * min(progresso, 1.0))
+        cv2.rectangle(frame, (0, 0), (bw, 6), (0, 230, 0), -1)
         if progresso >= 1.0:
-            cv2.putText(frame, "CAPTURANDO...", (cx - 90, cy),
+            cv2.putText(frame, "CAPTURANDO...", (w // 2 - 90, 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 230, 0), 2, cv2.LINE_AA)
     return frame

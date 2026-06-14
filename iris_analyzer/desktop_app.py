@@ -27,10 +27,10 @@ from PyQt6.QtWidgets import (
 import logging
 
 from . import config
-from .iris_segmentation import segmentar_olhos, criar_landmarker, Olho
+from .iris_segmentation import detectar_face, criar_landmarker, Olho
 from .iris_features import extrair_features
 from .iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
-from .captura_guiada import avaliar, desenhar_guia, FRAMES_ESTAVEL
+from .captura_guiada import avaliar, desenhar_guia, desenhar_malha, FRAMES_ESTAVEL
 from .iris_advanced import detectar_pupila, heatmap_iris, refinar_iris
 from .iris_quality import avaliar_qualidade
 from .pdf_report import gerar_pdf, DadosCliente
@@ -193,6 +193,7 @@ class MainWindow(QMainWindow):
         self._frame_atual = None
         self._olhos = []
         self._feats = []
+        self._pontos = None
         self._capturado = None  # (frame, olhos, feats)
 
         central = QWidget(); self.setCentralWidget(central)
@@ -346,17 +347,19 @@ class MainWindow(QMainWindow):
         if agora - self._ultimo_analise > 0.12:  # analisa ~8 fps
             self._ultimo_analise = agora
             try:
-                olhos = segmentar_olhos(frame, self._landmarker)
+                olhos, pontos = detectar_face(frame, self._landmarker)
                 feats = [extrair_features(frame, o.centro, o.raio_iris,
                                           o.raio_pupila) for o in olhos]
             except Exception:
-                olhos, feats = [], []
-            self._olhos, self._feats = olhos, feats
+                olhos, feats, pontos = [], [], None
+            self._olhos, self._feats, self._pontos = olhos, feats, pontos
         self._mostrar(frame, self._olhos, self._feats)
 
     def _mostrar(self, frame, olhos, feats):
         self._frame_atual = frame
         disp = frame.copy()
+        # malha facial (face mesh)
+        desenhar_malha(disp, self._pontos)
         for o, f in zip(olhos, feats):
             c = (int(o.centro[0]), int(o.centro[1]))
             cor = (0, 255, 0) if f.qualidade_ok else (0, 165, 255)

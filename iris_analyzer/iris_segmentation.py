@@ -133,3 +133,42 @@ def segmentar_olhos(
                  raio_pupila=r_pup, pontos_iris=pts, contorno=contorno)
         )
     return olhos
+
+
+def detectar_face(imagem_bgr: np.ndarray, landmarker: FaceLandmarker | None = None):
+    """Como segmentar_olhos, mas tambem retorna os 478 landmarks da face.
+
+    Retorna (olhos, pontos) onde ``pontos`` e um array Nx2 (px) de todos os
+    landmarks, ou None se nenhuma face for detectada. Faz UMA deteccao so
+    (eficiente para o loop ao vivo).
+    """
+    validar_imagem(imagem_bgr, "imagem_bgr")
+    h, w = imagem_bgr.shape[:2]
+    rgb = cv2.cvtColor(imagem_bgr, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+    if landmarker is not None:
+        res = landmarker.detect(mp_image)
+    else:
+        with _criar_landmarker() as own:
+            res = own.detect(mp_image)
+    if not res.face_landmarks:
+        return [], None
+
+    lm = res.face_landmarks[0]
+    pontos = np.array([[p.x * w, p.y * h] for p in lm], dtype=np.float64)
+
+    def px(idxs):
+        return pontos[list(idxs)]
+
+    olhos: list[Olho] = []
+    for lado, idxs, cont_idx in (
+        ("direito", _IRIS_RIGHT, _OLHO_DIR_CONTORNO),
+        ("esquerdo", _IRIS_LEFT, _OLHO_ESQ_CONTORNO),
+    ):
+        pts = px(idxs)
+        centro, r_iris = _circulo_de_pontos(pts)
+        r_pup = max(r_iris * 0.45, 2.0)
+        contorno = px(cont_idx).astype(np.int32)
+        olhos.append(Olho(lado=lado, centro=centro, raio_iris=r_iris,
+                          raio_pupila=r_pup, pontos_iris=pts, contorno=contorno))
+    return olhos, pontos
