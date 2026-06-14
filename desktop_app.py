@@ -35,10 +35,17 @@ from iris_advanced import detectar_pupila, heatmap_iris
 from pdf_report import gerar_pdf, DadosCliente
 
 # Paleta
-LARANJA = "#E94A12"
-ESCURO = "#1f2329"
-PAINEL = "#2a2f37"
-TEXTO = "#e8e8e8"
+# Paleta minimalista — preto real, monocromatica, acento branco.
+BG = "#0b0b0c"        # fundo principal
+CARD = "#121214"      # cartoes / painel
+BORDER = "#222226"    # bordas sutis
+TEXTO = "#ededed"     # texto primario
+MUTED = "#7a7a7e"     # texto secundario
+ACCENT = "#ffffff"    # acento (branco)
+# compat com nomes antigos usados no codigo
+LARANJA = ACCENT
+ESCURO = "#141416"
+PAINEL = CARD
 
 
 def bgr_para_qpixmap(frame: np.ndarray) -> QPixmap:
@@ -48,14 +55,17 @@ def bgr_para_qpixmap(frame: np.ndarray) -> QPixmap:
     return QPixmap.fromImage(img.copy())
 
 
+_CAP = f"color:{MUTED};font-size:10px;letter-spacing:0.3px;"
+
+
 def _campo(label_txt):
-    box = QVBoxLayout()
-    lab = QLabel(label_txt)
-    lab.setStyleSheet(f"color:{TEXTO};font-size:11px;")
+    box = QVBoxLayout(); box.setSpacing(4)
+    lab = QLabel(label_txt.upper())
+    lab.setStyleSheet(f"color:{MUTED};font-size:10px;letter-spacing:0.5px;")
     inp = QLineEdit()
     inp.setStyleSheet(
-        f"background:{ESCURO};color:{TEXTO};border:1px solid #444;"
-        "border-radius:6px;padding:6px;")
+        f"background:{ESCURO};color:{TEXTO};border:1px solid {BORDER};"
+        f"border-radius:8px;padding:8px;selection-background-color:#333;")
     box.addWidget(lab)
     box.addWidget(inp)
     return box, inp
@@ -66,49 +76,49 @@ class CardOlho(QFrame):
     def __init__(self):
         super().__init__()
         self.setStyleSheet(
-            f"background:{PAINEL};border-radius:10px;")
-        lay = QVBoxLayout(self)
+            f"CardOlho{{background:{CARD};border:1px solid {BORDER};border-radius:14px;}}")
+        lay = QVBoxLayout(self); lay.setContentsMargins(18, 16, 18, 16); lay.setSpacing(12)
         self.titulo = QLabel("—")
-        self.titulo.setStyleSheet(f"color:{LARANJA};font-size:15px;font-weight:bold;")
+        self.titulo.setStyleSheet(
+            f"color:{TEXTO};font-size:13px;font-weight:600;letter-spacing:1px;")
         lay.addWidget(self.titulo)
 
-        imgs = QHBoxLayout()
+        imgs = QHBoxLayout(); imgs.setSpacing(14)
         self.zoom = QLabel(); self.zoom.setFixedSize(150, 150)
-        self.zoom.setStyleSheet("background:#000;border-radius:6px;")
+        self.zoom.setStyleSheet(f"background:#000;border:1px solid {BORDER};border-radius:8px;")
         self.zoom.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # Mapa de zonas (iridologia)
         self.mapa = QLabel(); self.mapa.setFixedSize(170, 170)
-        self.mapa.setStyleSheet("background:#1a1a1a;border-radius:6px;")
+        self.mapa.setStyleSheet(f"background:#000;border:1px solid {BORDER};border-radius:8px;")
         self.mapa.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        col = QVBoxLayout()
-        cap_z = QLabel("Íris (zoom)"); cap_z.setStyleSheet("color:#aaa;font-size:10px;")
+        col = QVBoxLayout(); col.setSpacing(5)
+        cap_z = QLabel("ÍRIS (ZOOM)"); cap_z.setStyleSheet(_CAP)
         col.addWidget(self.zoom); col.addWidget(cap_z)
         self.heat = QLabel(); self.heat.setFixedSize(150, 150)
-        self.heat.setStyleSheet("background:#000;border-radius:6px;")
+        self.heat.setStyleSheet(f"background:#000;border:1px solid {BORDER};border-radius:8px;")
         self.heat.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        cap_h = QLabel("Mapa de calor (marcas)")
-        cap_h.setStyleSheet("color:#aaa;font-size:10px;")
-        colh = QVBoxLayout()
+        cap_h = QLabel("MAPA DE CALOR"); cap_h.setStyleSheet(_CAP)
+        colh = QVBoxLayout(); colh.setSpacing(5)
         colh.addWidget(self.heat); colh.addWidget(cap_h)
-        colm = QVBoxLayout()
-        cap_m = QLabel("Mapa de zonas"); cap_m.setStyleSheet("color:#aaa;font-size:10px;")
+        colm = QVBoxLayout(); colm.setSpacing(5)
+        cap_m = QLabel("MAPA DE ZONAS"); cap_m.setStyleSheet(_CAP)
         colm.addWidget(self.mapa); colm.addWidget(cap_m)
         imgs.addLayout(col); imgs.addLayout(colh); imgs.addLayout(colm); imgs.addStretch()
         lay.addLayout(imgs)
 
         # Zonas mais marcadas (referencia tradicional)
-        self.zonas_lbl = QLabel("Zonas: aguardando captura…")
+        self.zonas_lbl = QLabel("Aguardando captura…")
         self.zonas_lbl.setStyleSheet(f"color:{TEXTO};font-size:12px;")
         self.zonas_lbl.setWordWrap(True)
         lay.addWidget(self.zonas_lbl)
 
         self.metricas = QLabel("")
-        self.metricas.setStyleSheet("color:#bbb;font-size:11px;")
+        self.metricas.setStyleSheet(f"color:{MUTED};font-size:11px;")
         self.metricas.setWordWrap(True)
         lay.addWidget(self.metricas)
 
     def atualizar(self, olho: Olho, f, frame):
-        self.titulo.setText(f"Olho {olho.lado}")
+        self.titulo.setText(f"OLHO {olho.lado.upper()}")
         # zoom apertado na iris (1.35x do raio)
         cx, cy = olho.centro
         r = olho.raio_iris * 1.35
@@ -169,7 +179,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Iris Analyzer — Análise de Íris (Bem-estar)")
         self.resize(1280, 820)
-        self.setStyleSheet(f"background:{ESCURO};")
+        self.setStyleSheet(f"QMainWindow,QWidget{{background:{BG};}}")
 
         self._frame_atual = None
         self._olhos = []
@@ -178,50 +188,67 @@ class MainWindow(QMainWindow):
 
         central = QWidget(); self.setCentralWidget(central)
         root = QVBoxLayout(central)
+        root.setContentsMargins(0, 0, 0, 0); root.setSpacing(0)
 
         # ---- Header ----
         header = QFrame()
-        header.setStyleSheet(f"background:{LARANJA};border-radius:0px;")
-        hl = QHBoxLayout(header)
+        header.setFixedHeight(64)
+        header.setStyleSheet(
+            f"background:{BG};border-bottom:1px solid {BORDER};")
+        hl = QHBoxLayout(header); hl.setContentsMargins(28, 0, 28, 0)
         logo = QLabel("●  IRIS ANALYZER")
-        logo.setStyleSheet("color:white;font-size:20px;font-weight:bold;")
-        sub = QLabel("Análise de imagem da íris · Bem-estar")
-        sub.setStyleSheet("color:#ffe;font-size:12px;")
-        hl.addWidget(logo); hl.addWidget(sub); hl.addStretch()
+        logo.setStyleSheet(
+            f"color:{TEXTO};font-size:16px;font-weight:700;letter-spacing:2px;")
+        sub = QLabel("análise de imagem da íris · bem-estar")
+        sub.setStyleSheet(f"color:{MUTED};font-size:11px;letter-spacing:0.5px;")
+        hl.addWidget(logo); hl.addSpacing(14); hl.addWidget(sub); hl.addStretch()
         root.addWidget(header)
 
         # ---- Corpo ----
         corpo = QHBoxLayout()
+        corpo.setContentsMargins(28, 24, 28, 16); corpo.setSpacing(28)
         root.addLayout(corpo, 1)
 
         # Esquerda: camera + botoes + formulario
-        esq = QVBoxLayout()
+        esq = QVBoxLayout(); esq.setSpacing(14)
         self.video = QLabel("Iniciando câmera…")
         self.video.setFixedSize(640, 480)
-        self.video.setStyleSheet("background:#000;border-radius:10px;color:#888;")
+        self.video.setStyleSheet(
+            f"background:#000;border:1px solid {BORDER};border-radius:12px;color:{MUTED};")
         self.video.setAlignment(Qt.AlignmentFlag.AlignCenter)
         esq.addWidget(self.video)
 
-        botoes = QHBoxLayout()
-        self.btn_capt = QPushButton("📸  Capturar e Analisar")
+        botoes = QHBoxLayout(); botoes.setSpacing(12)
+        self.btn_capt = QPushButton("Capturar e analisar")
         self.btn_capt.clicked.connect(self.capturar)
-        self.btn_pdf = QPushButton("📄  Gerar Laudo PDF")
+        self.btn_pdf = QPushButton("Gerar laudo PDF")
         self.btn_pdf.clicked.connect(self.gerar_laudo)
         self.btn_pdf.setEnabled(False)
+        # primario = branco preenchido; secundario = contorno
+        self.btn_capt.setStyleSheet(
+            f"QPushButton{{background:{ACCENT};color:#000;font-weight:600;font-size:13px;"
+            f"border:none;border-radius:10px;padding:12px;}}"
+            f"QPushButton:hover{{background:#d8d8d8;}}")
+        self.btn_pdf.setStyleSheet(
+            f"QPushButton{{background:transparent;color:{TEXTO};font-weight:600;font-size:13px;"
+            f"border:1px solid {BORDER};border-radius:10px;padding:12px;}}"
+            f"QPushButton:hover{{border-color:#444;}}"
+            f"QPushButton:disabled{{color:#444;border-color:#1a1a1c;}}")
         for b in (self.btn_capt, self.btn_pdf):
-            b.setStyleSheet(
-                f"background:{LARANJA};color:white;font-weight:bold;font-size:13px;"
-                "border:none;border-radius:8px;padding:10px;")
             b.setCursor(Qt.CursorShape.PointingHandCursor)
         botoes.addWidget(self.btn_capt); botoes.addWidget(self.btn_pdf)
         esq.addLayout(botoes)
 
-        self.chk_auto = QCheckBox("Captura guiada (auto-disparo quando a imagem está boa)")
+        self.chk_auto = QCheckBox("Captura guiada · auto-disparo quando a imagem está boa")
         self.chk_auto.setChecked(True)
-        self.chk_auto.setStyleSheet(f"color:{TEXTO};font-size:12px;padding:4px;")
+        self.chk_auto.setStyleSheet(
+            f"QCheckBox{{color:{MUTED};font-size:12px;padding:2px;}}"
+            f"QCheckBox::indicator{{width:16px;height:16px;border:1px solid {BORDER};"
+            f"border-radius:4px;background:{ESCURO};}}"
+            f"QCheckBox::indicator:checked{{background:{ACCENT};border-color:{ACCENT};}}")
         esq.addWidget(self.chk_auto)
 
-        form = QGridLayout()
+        form = QGridLayout(); form.setHorizontalSpacing(14); form.setVerticalSpacing(12)
         (b1, self.in_nome) = _campo("Nome do cliente")
         (b2, self.in_idade) = _campo("Idade")
         (b3, self.in_prof) = _campo("Profissional responsável")
@@ -230,38 +257,46 @@ class MainWindow(QMainWindow):
         form.addLayout(b1, 0, 0); form.addLayout(b2, 0, 1)
         form.addLayout(b3, 1, 0); form.addLayout(b4, 1, 1)
         esq.addLayout(form)
-        lab_obs = QLabel("Observações"); lab_obs.setStyleSheet(f"color:{TEXTO};font-size:11px;")
+        lab_obs = QLabel("OBSERVAÇÕES")
+        lab_obs.setStyleSheet(f"color:{MUTED};font-size:10px;letter-spacing:0.5px;")
         esq.addWidget(lab_obs)
         self.in_obs = QTextEdit(); self.in_obs.setFixedHeight(60)
         self.in_obs.setStyleSheet(
-            f"background:{ESCURO};color:{TEXTO};border:1px solid #444;border-radius:6px;")
+            f"background:{ESCURO};color:{TEXTO};border:1px solid {BORDER};border-radius:8px;"
+            f"padding:4px;")
         esq.addWidget(self.in_obs)
         esq.addStretch()
         corpo.addLayout(esq)
 
         # Direita: resultados
-        dir_box = QVBoxLayout()
-        titdir = QLabel("Resultados da análise")
-        titdir.setStyleSheet(f"color:{TEXTO};font-size:16px;font-weight:bold;")
+        dir_box = QVBoxLayout(); dir_box.setSpacing(14)
+        titdir = QLabel("RESULTADOS")
+        titdir.setStyleSheet(
+            f"color:{TEXTO};font-size:12px;font-weight:600;letter-spacing:2px;")
         dir_box.addWidget(titdir)
         self.card_dir = CardOlho()
         self.card_esq = CardOlho()
         scroll = QScrollArea(); scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("border:none;")
-        cont = QWidget(); cl = QVBoxLayout(cont)
+        scroll.setStyleSheet(
+            f"QScrollArea{{border:none;background:transparent;}}"
+            f"QScrollBar:vertical{{background:transparent;width:8px;margin:0;}}"
+            f"QScrollBar::handle:vertical{{background:{BORDER};border-radius:4px;min-height:30px;}}"
+            f"QScrollBar::add-line,QScrollBar::sub-line{{height:0;}}")
+        cont = QWidget(); cont.setStyleSheet("background:transparent;")
+        cl = QVBoxLayout(cont); cl.setSpacing(16); cl.setContentsMargins(0, 0, 6, 0)
         cl.addWidget(self.card_dir); cl.addWidget(self.card_esq); cl.addStretch()
         scroll.setWidget(cont)
         dir_box.addWidget(scroll, 1)
         corpo.addLayout(dir_box, 1)
 
-        # ---- Rodape disclaimer ----
+        # ---- Rodape disclaimer (minimalista) ----
         disc = QLabel(
-            "⚠️  Ferramenta de bem-estar e análise de imagem. NÃO é diagnóstico "
-            "médico. A iridologia não tem validação científica para diagnóstico. "
-            "Procure um profissional de saúde para questões clínicas.")
+            "Ferramenta de bem-estar e análise de imagem. Não é diagnóstico médico — "
+            "a iridologia não tem validação científica para diagnóstico.")
         disc.setWordWrap(True)
         disc.setStyleSheet(
-            "background:#3a2c10;color:#f0c060;font-size:11px;padding:8px;border-radius:6px;")
+            f"background:{BG};color:{MUTED};font-size:10px;padding:10px 28px;"
+            f"border-top:1px solid {BORDER};letter-spacing:0.3px;")
         root.addWidget(disc)
 
         # Camera (na main thread via QTimer — necessario no macOS).
@@ -410,7 +445,16 @@ def main():
     )
     log = logging.getLogger("iris_analyzer")
     app = QApplication([])
-    app.setFont(QFont("Helvetica", 10))
+    app.setStyle("Fusion")
+    app.setFont(QFont("Helvetica Neue", 10))
+    app.setStyleSheet(
+        f"QWidget{{background:{BG};color:{TEXTO};}}"
+        f"QMessageBox{{background:{CARD};}}"
+        f"QMessageBox QLabel{{color:{TEXTO};}}"
+        f"QPushButton{{background:{ESCURO};color:{TEXTO};border:1px solid {BORDER};"
+        f"border-radius:8px;padding:6px 14px;}}"
+        f"QPushButton:hover{{border-color:#444;}}"
+        f"QToolTip{{background:{CARD};color:{TEXTO};border:1px solid {BORDER};}}")
 
     # Checagem de ambiente: modelo do MediaPipe presente?
     if not config.MODELO_PATH.exists():
