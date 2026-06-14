@@ -26,14 +26,14 @@ from PyQt6.QtWidgets import (
 
 import logging
 
-import config
-from iris_segmentation import segmentar_olhos, criar_landmarker, Olho
-from iris_features import extrair_features, normalizar_daugman
-from iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
-from captura_guiada import avaliar, desenhar_guia, FRAMES_ESTAVEL
-from iris_advanced import detectar_pupila, heatmap_iris
-from iris_quality import avaliar_qualidade
-from pdf_report import gerar_pdf, DadosCliente
+from . import config
+from .iris_segmentation import segmentar_olhos, criar_landmarker, Olho
+from .iris_features import extrair_features
+from .iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
+from .captura_guiada import avaliar, desenhar_guia, FRAMES_ESTAVEL
+from .iris_advanced import detectar_pupila, heatmap_iris
+from .iris_quality import avaliar_qualidade
+from .pdf_report import gerar_pdf, DadosCliente
 
 # Paleta
 # Paleta minimalista — preto real, monocromatica, acento branco.

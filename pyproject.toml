@@ -24,16 +24,14 @@ dependencies = [
 dev = ["pytest>=7.0"]
 
 [project.scripts]
-iris-analyzer = "desktop_app:main"
+iris-analyzer = "iris_analyzer:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+pythonpath = ["."]
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.setuptools]
-py-modules = [
-    "desktop_app", "iris_segmentation", "iris_features", "iris_advanced",
-    "iris_map", "captura_guiada", "pdf_report", "config", "validation",
-    "download_model",
-]
+packages = ["iris_analyzer"]
+py-modules = ["download_model", "run"]

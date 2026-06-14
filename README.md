@@ -26,7 +26,7 @@ python3 download_model.py
 ## Uso
 
 ```bash
-python3 desktop_app.py
+python3 run.py
 ```
 
 No macOS, autorize o acesso à câmera em
@@ -56,16 +56,26 @@ A avaliação de qualidade segue os fatores consagrados em reconhecimento de ír
 - Kalka et al. — estimação e fusão de fatores de qualidade da íris
 - Literatura de remoção de reflexo especular em imagens de íris (limiar adaptativo)
 
-## Arquivos
+## Estrutura
 
-- `desktop_app.py` — aplicativo principal (PyQt6)
-- `iris_segmentation.py` — segmentação da íris/pupila (MediaPipe)
-- `iris_features.py` — Daugman + features + qualidade
-- `iris_advanced.py` — pupila real, CLAHE, Frangi, lacunas, heatmap
-- `iris_quality.py` — qualidade multi-fator (foco/oclusão/reflexo/ângulo/…)
-- `iris_map.py` — mapa de zonas (iridologia)
-- `captura_guiada.py` — guia de captura e auto-disparo por qualidade
-- `pdf_report.py` — geração do laudo PDF
+```
+iris-analyzer/
+├── run.py                  # inicia o app  (python3 run.py)
+├── download_model.py       # baixa o modelo do MediaPipe
+├── iris_analyzer/          # pacote
+│   ├── desktop_app.py      #   aplicativo principal (PyQt6)
+│   ├── iris_segmentation.py#   segmentação íris/pupila (MediaPipe)
+│   ├── iris_features.py     #   Daugman + features + qualidade
+│   ├── iris_advanced.py     #   pupila real, CLAHE, Frangi, lacunas, heatmap
+│   ├── iris_quality.py      #   qualidade multi-fator
+│   ├── iris_map.py          #   mapa de zonas (iridologia)
+│   ├── captura_guiada.py    #   guia de captura + auto-disparo
+│   ├── pdf_report.py        #   laudo PDF
+│   ├── config.py            #   configuração central
+│   └── validation.py        #   validações e exceções
+├── tests/                  # pytest
+└── docs/                   # GitHub Pages
+```
 
 ## Desenvolvimento
 

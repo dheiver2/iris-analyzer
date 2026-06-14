@@ -9,9 +9,9 @@ import cv2
 import numpy as np
 import pytest
 
-import config
-from iris_segmentation import segmentar_olhos, criar_landmarker
-from validation import ImagemInvalidaError
+from iris_analyzer import config
+from iris_analyzer.iris_segmentation import segmentar_olhos, criar_landmarker
+from iris_analyzer.validation import ImagemInvalidaError
 
 ASSET = os.path.join(os.path.dirname(__file__), "assets", "rosto.jpg")
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 import sys
 import urllib.request
 
-import config
+from iris_analyzer import config
 
 
 def baixar(force: bool = False) -> str:

@@ -18,8 +18,8 @@ from mediapipe.tasks.python.vision import (
     RunningMode,
 )
 
-import config
-from validation import validar_imagem, ModeloAusenteError
+from . import config
+from .validation import validar_imagem, ModeloAusenteError
 
 _MODELO = str(config.MODELO_PATH)
 
@@ -116,15 +116,3 @@ def segmentar_olhos(
                  raio_pupila=r_pup, pontos_iris=pts, contorno=contorno)
         )
     return olhos
-
-
-def desenhar_olhos(imagem_bgr: np.ndarray, olhos: list[Olho]) -> np.ndarray:
-    out = imagem_bgr.copy()
-    for o in olhos:
-        c = (int(round(o.centro[0])), int(round(o.centro[1])))
-        cv2.circle(out, c, int(round(o.raio_iris)), (0, 255, 0), 2)
-        cv2.circle(out, c, int(round(o.raio_pupila)), (0, 0, 255), 1)
-        cv2.circle(out, c, 2, (255, 0, 0), 3)
-        for p in o.pontos_iris:
-            cv2.circle(out, (int(p[0]), int(p[1])), 2, (0, 255, 255), -1)
-    return out

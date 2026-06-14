@@ -1,7 +1,7 @@
 import pytest
 
-from iris_map import analisar_zonas, render_mapa, top_zonas, Zona
-from validation import IrisError
+from iris_analyzer.iris_map import analisar_zonas, render_mapa, top_zonas, Zona
+from iris_analyzer.validation import IrisError
 
 
 def test_analisar_retorna_12_zonas(iris_sintetica):

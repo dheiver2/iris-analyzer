@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 from skimage.filters import frangi
 
-from validation import validar_imagem, validar_geometria, GeometriaInvalidaError
+from .validation import validar_imagem, validar_geometria, GeometriaInvalidaError
 
 
 def detectar_pupila(imagem_bgr, centro, r_iris) -> float:

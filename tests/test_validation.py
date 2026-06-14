@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from validation import (
+from iris_analyzer.validation import (
     validar_imagem, validar_geometria, validar_lado,
     ImagemInvalidaError, GeometriaInvalidaError, IrisError,
 )

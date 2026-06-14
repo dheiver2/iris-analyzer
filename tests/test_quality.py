@@ -3,7 +3,7 @@ import types
 import cv2
 import numpy as np
 
-from iris_quality import avaliar_qualidade, Qualidade, _foco_alta_frequencia
+from iris_analyzer.iris_quality import avaliar_qualidade, Qualidade, _foco_alta_frequencia
 
 
 def _olho_de(d):

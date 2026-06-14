@@ -8,9 +8,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+PKG_DIR = Path(__file__).resolve().parent      # pacote iris_analyzer/
+BASE_DIR = PKG_DIR.parent                       # raiz do repositorio
 
-# --- Modelo MediaPipe ---
+# --- Modelo MediaPipe (na raiz do repositorio) ---
 MODELO_PATH = Path(os.environ.get("IRIS_MODELO", BASE_DIR / "face_landmarker.task"))
 MODELO_URL = (
     "https://storage.googleapis.com/mediapipe-models/face_landmarker/"

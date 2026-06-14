@@ -2,10 +2,10 @@ import cv2
 import numpy as np
 import pytest
 
-from iris_advanced import (
+from iris_analyzer.iris_advanced import (
     detectar_pupila, realcar_clahe, fibras_frangi, detectar_lacunas, heatmap_iris,
 )
-from validation import ImagemInvalidaError, GeometriaInvalidaError
+from iris_analyzer.validation import ImagemInvalidaError, GeometriaInvalidaError
 
 
 def test_detectar_pupila_plausivel(iris_sintetica):
