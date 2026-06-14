@@ -67,3 +67,4 @@ No macOS, autorize o acesso à câmera em
 
 Olho centralizado, bem aberto, boa iluminação difusa (sem flash direto),
 câmera próxima e foco nítido na íris.
+# iris-analyzer
