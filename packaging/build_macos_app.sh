@@ -38,8 +38,10 @@ cp "$TMP/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cat > "$APP/Contents/MacOS/IrisAnalyzer" <<'EOF'
 #!/bin/bash
 cd "$HOME/Library/Application Support/IrisAnalyzer" || exit 1
+# Detecta HARDWARE Apple Silicon (sysctl funciona mesmo sob Rosetta;
+# uname -m mentiria 'x86_64' quando o launchd inicia o app em x86_64).
 ARCHCMD=""
-[ "$(uname -m)" = "arm64" ] && ARCHCMD="arch -arm64"
+[ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ] && ARCHCMD="arch -arm64"
 LOG="$HOME/Library/Logs/IrisAnalyzer.log"
 [ -f face_landmarker.task ] || $ARCHCMD /usr/bin/python3 download_model.py >"$LOG" 2>&1
 exec $ARCHCMD /usr/bin/python3 run.py >>"$LOG" 2>&1
