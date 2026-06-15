@@ -20,8 +20,12 @@ MODELO_URL = (
 
 # --- Camera / preview ---
 CAMERA_INDEX = int(os.environ.get("IRIS_CAMERA", "0"))
-PREVIEW_W = 640
-PREVIEW_H = 480
+# Resolucao de CAPTURA: alta para a iris ter muitos pixels (qualidade).
+# A camera cai para o maior modo que suportar se nao tiver este exato.
+CAMERA_WIDTH = int(os.environ.get("IRIS_CAM_W", "1920"))
+CAMERA_HEIGHT = int(os.environ.get("IRIS_CAM_H", "1080"))
+PREVIEW_W = 720                     # tamanho do preview na tela
+PREVIEW_H = 540
 ANALISE_INTERVALO_S = 0.12          # ~8 fps de analise no preview
 
 # --- Qualidade de imagem ---

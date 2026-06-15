@@ -59,6 +59,11 @@ def bgr_para_qpixmap(frame: np.ndarray) -> QPixmap:
     return QPixmap.fromImage(img.copy())
 
 
+def _interp(origem: int, destino: int) -> int:
+    """INTER_AREA ao reduzir (mais nitido), INTER_CUBIC ao ampliar."""
+    return cv2.INTER_AREA if origem >= destino else cv2.INTER_CUBIC
+
+
 _CAP = f"color:{MUTED};font-size:10px;letter-spacing:0.3px;"
 
 
@@ -131,12 +136,12 @@ class CardOlho(QFrame):
         x1, y1 = min(w, int(cx + r)), min(h, int(cy + r))
         crop = frame[y0:y1, x0:x1]
         if crop.size:
-            crop = cv2.resize(crop, (150, 150), interpolation=cv2.INTER_CUBIC)
+            crop = cv2.resize(crop, (150, 150), interpolation=_interp(crop.shape[0], 150))
             self.zoom.setPixmap(bgr_para_qpixmap(crop))
 
         # mapa de calor das marcas (lacunas + fibras)
         hm = heatmap_iris(frame, olho.centro, olho.raio_iris, rp)
-        hm = cv2.resize(hm, (150, 150), interpolation=cv2.INTER_CUBIC)
+        hm = cv2.resize(hm, (150, 150), interpolation=_interp(hm.shape[0], 150))
         self.heat.setPixmap(bgr_para_qpixmap(hm))
 
         # mapa de zonas (iridologia)
@@ -224,7 +229,7 @@ class MainWindow(QMainWindow):
         # Esquerda: camera + botoes + formulario
         esq = QVBoxLayout(); esq.setSpacing(14)
         self.video = QLabel("Iniciando câmera…")
-        self.video.setFixedSize(640, 480)
+        self.video.setFixedSize(config.PREVIEW_W, config.PREVIEW_H)
         self.video.setStyleSheet(
             f"background:#000;border:1px solid {BORDER};border-radius:12px;color:{MUTED};")
         self.video.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -341,11 +346,18 @@ class MainWindow(QMainWindow):
 
     def _tick_inner(self):
         if self.cap is None:
-            self.cap = cv2.VideoCapture(0)
+            self.cap = cv2.VideoCapture(config.CAMERA_INDEX)
             if not self.cap.isOpened():
                 self.video.setText("Câmera indisponível.\nAutorize em Ajustes > "
                                    "Privacidade e Segurança > Câmera.")
                 return
+            # Pede alta resolucao (mais pixels na iris = melhor qualidade)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.CAMERA_WIDTH)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.CAMERA_HEIGHT)
+            w = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            h = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            logging.getLogger("iris_analyzer").info(
+                "Câmera em %dx%d", int(w), int(h))
         if not self.cap.isOpened():
             return
         ok, frame = self.cap.read()
@@ -391,7 +403,7 @@ class MainWindow(QMainWindow):
                 self.capturar()
 
         self.video.setPixmap(bgr_para_qpixmap(disp).scaled(
-            640, 480, Qt.AspectRatioMode.KeepAspectRatio,
+            config.PREVIEW_W, config.PREVIEW_H, Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation))
 
     def capturar(self):
@@ -466,13 +478,14 @@ class MainWindow(QMainWindow):
         for o, f in zip(olhos, feats):
             c = (int(o.centro[0]), int(o.centro[1]))
             cv2.circle(anot, c, int(o.raio_iris), (0, 255, 0), 2)
-            # zoom
-            r = o.raio_iris * 2.2
+            # zoom (alta resolucao -> recorte grande, downscale nitido)
+            r = o.raio_iris * 1.6
             h, w = frame.shape[:2]
             x0, y0 = max(0, int(c[0] - r)), max(0, int(c[1] - r))
             x1, y1 = min(w, int(c[0] + r)), min(h, int(c[1] + r))
             zoom_p = f"{base}_zoom_{o.lado}.jpg"
-            cv2.imwrite(zoom_p, cv2.resize(frame[y0:y1, x0:x1], (300, 300)))
+            zc = frame[y0:y1, x0:x1]
+            cv2.imwrite(zoom_p, cv2.resize(zc, (400, 400), interpolation=_interp(zc.shape[0], 400)))
             rp = detectar_pupila(frame, o.centro, o.raio_iris)
             q = avaliar_qualidade(frame, o, rp)
             bio = medir_biometria(o, rp)
