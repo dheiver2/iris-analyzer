@@ -33,18 +33,24 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$TMP/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 
-# launcher: roda direto (sem Terminal). Em Apple Silicon, forca arm64 para
-# carregar as libs nativas (numpy/cv2) — o launchd as vezes inicia em x86_64.
-cat > "$APP/Contents/MacOS/IrisAnalyzer" <<'EOF'
+# Script de launch (na pasta de suporte). Forca arm64 em Apple Silicon
+# (sysctl funciona mesmo sob Rosetta).
+cat > "$SUPP/launch.sh" <<'EOF'
 #!/bin/bash
 cd "$HOME/Library/Application Support/IrisAnalyzer" || exit 1
-# Detecta HARDWARE Apple Silicon (sysctl funciona mesmo sob Rosetta;
-# uname -m mentiria 'x86_64' quando o launchd inicia o app em x86_64).
-ARCHCMD=""
-[ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ] && ARCHCMD="arch -arm64"
-LOG="$HOME/Library/Logs/IrisAnalyzer.log"
-[ -f face_landmarker.task ] || $ARCHCMD /usr/bin/python3 download_model.py >"$LOG" 2>&1
-exec $ARCHCMD /usr/bin/python3 run.py >>"$LOG" 2>&1
+ARCH=""
+[ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ] && ARCH="arch -arm64"
+[ -f face_landmarker.task ] || $ARCH /usr/bin/python3 download_model.py
+exec $ARCH /usr/bin/python3 run.py
+EOF
+chmod +x "$SUPP/launch.sh"
+
+# launcher do .app: abre via Terminal (que tem permissao de camera; app
+# nao-assinado nao recebe a permissao de camera quando aberto direto).
+cat > "$APP/Contents/MacOS/IrisAnalyzer" <<'EOF'
+#!/bin/bash
+osascript -e 'tell application "Terminal" to activate' \
+          -e "tell application \"Terminal\" to do script \"clear; bash ~/Library/Application\\\\ Support/IrisAnalyzer/launch.sh\""
 EOF
 chmod +x "$APP/Contents/MacOS/IrisAnalyzer"
 
