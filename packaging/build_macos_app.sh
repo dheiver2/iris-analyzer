@@ -66,6 +66,12 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
 </dict></plist>
 EOF
 touch "$APP"
+# Assinatura ad-hoc: da identidade estavel ao bundle para a permissao de
+# camera (TCC) persistir. Sem isso, app nao-assinado nao recebe/mantem o grant.
+codesign --force --deep --sign - "$APP" 2>/dev/null && echo "assinado (ad-hoc)"
 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f "$APP" 2>/dev/null || true
 echo "App criado em: $APP"
 echo "Codigo instalado em: $SUPP"
+echo "Dica: se a camera nao conectar, rode:"
+echo "  tccutil reset Camera br.com.dheiver.irisanalyzer"
+echo "  e reabra o app, autorizando a camera quando pedir."
