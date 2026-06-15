@@ -12,6 +12,7 @@ Recursos:
 from __future__ import annotations
 
 import os
+import sys
 import time
 
 import cv2
@@ -355,7 +356,12 @@ class MainWindow(QMainWindow):
             self._ultimo_open = agora0
             if self.cap is not None:
                 self.cap.release()
-            self.cap = cv2.VideoCapture(config.CAMERA_INDEX)
+            # No macOS, usa o backend nativo (AVFoundation) diretamente —
+            # evita a tentativa de FFMPEG e lida melhor com a permissao.
+            if sys.platform == "darwin":
+                self.cap = cv2.VideoCapture(config.CAMERA_INDEX, cv2.CAP_AVFOUNDATION)
+            else:
+                self.cap = cv2.VideoCapture(config.CAMERA_INDEX)
             if not self.cap.isOpened():
                 self.video.setText(
                     "Conectando à câmera…\n\nSe pedir permissão, autorize.\n"
