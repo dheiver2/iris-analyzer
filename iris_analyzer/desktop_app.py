@@ -555,6 +555,23 @@ def main():
         log.error("Excecao nao tratada", exc_info=(exc_type, exc, tb))
     sys.excepthook = _hook
 
+    # macOS: quando o app e iniciado por um script dentro do .app, o processo
+    # nasce em segundo plano e a JANELA NAO APARECE. Promove a app de primeiro
+    # plano (Dock + janela visivel) via ApplicationServices (sem depender de
+    # pyobjc, que pode nao estar instalado).
+    if sys.platform == "darwin":
+        try:
+            import ctypes
+            class _PSN(ctypes.Structure):
+                _fields_ = [("hi", ctypes.c_uint32), ("lo", ctypes.c_uint32)]
+            _svc = ctypes.cdll.LoadLibrary(
+                "/System/Library/Frameworks/ApplicationServices.framework/"
+                "ApplicationServices")
+            _psn = _PSN(0, 2)  # kCurrentProcess
+            _svc.TransformProcessType(ctypes.byref(_psn), 1)  # -> foreground app
+        except Exception:
+            log.warning("Nao foi possivel promover a app a primeiro plano.")
+
     app = QApplication([])
     app.setStyle("Fusion")
     app.setFont(QFont("Helvetica Neue", 10))
@@ -579,6 +596,13 @@ def main():
 
     win = MainWindow()
     win.show()
+    win.raise_()
+    win.activateWindow()
+    if sys.platform == "darwin":
+        try:
+            app.setActiveWindow(win)
+        except Exception:
+            pass
     log.info("Iris Analyzer iniciado.")
     app.exec()
 
