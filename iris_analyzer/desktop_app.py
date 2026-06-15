@@ -33,6 +33,9 @@ from .iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
 from .captura_guiada import avaliar, desenhar_guia, desenhar_malha, FRAMES_ESTAVEL
 from .iris_advanced import detectar_pupila, heatmap_iris, refinar_iris
 from .iris_quality import avaliar_qualidade
+from .iris_metrics import (
+    medir_biometria, validar_plausibilidade, comparar_olhos,
+)
 from .pdf_report import gerar_pdf, DadosCliente
 
 # Paleta
@@ -118,7 +121,7 @@ class CardOlho(QFrame):
         self.metricas.setWordWrap(True)
         lay.addWidget(self.metricas)
 
-    def atualizar(self, olho: Olho, f, frame):
+    def atualizar(self, olho: Olho, f, frame, rp, q, bio):
         self.titulo.setText(f"OLHO {olho.lado.upper()}")
         # zoom apertado na iris (1.35x do raio)
         cx, cy = olho.centro
@@ -130,12 +133,6 @@ class CardOlho(QFrame):
         if crop.size:
             crop = cv2.resize(crop, (150, 150), interpolation=cv2.INTER_CUBIC)
             self.zoom.setPixmap(bgr_para_qpixmap(crop))
-
-        # pupila REAL (em vez de estimar) -> normalizacao mais precisa
-        rp = detectar_pupila(frame, olho.centro, olho.raio_iris)
-
-        # qualidade multi-fator (foco/oclusao/reflexo/angulo/dilatacao/tamanho)
-        q = avaliar_qualidade(frame, olho, rp)
 
         # mapa de calor das marcas (lacunas + fibras)
         hm = heatmap_iris(frame, olho.centro, olho.raio_iris, rp)
@@ -170,6 +167,7 @@ class CardOlho(QFrame):
 
         trama = "densa" if f.densidade_fibras > 0.10 else "lisa"
         textura = "uniforme" if f.glcm_homogeneidade > 0.5 else "com variações"
+        constituicao = "tensa" if f.densidade_fibras > 0.10 else "relaxada"
         cor_q = {"ruim": "#c25", "regular": "#c84", "boa": "#7a9",
                  "excelente": "#5b8"}.get(q.nivel, MUTED)
         self.metricas.setText(
@@ -177,8 +175,12 @@ class CardOlho(QFrame):
             f"({q.nivel})</span><br>"
             f"<span style='color:{MUTED};font-size:10px'>foco {q.foco:.2f} · "
             f"oclusão {q.oclusao*100:.0f}% · reflexo {q.reflexo*100:.1f}% · "
-            f"ângulo {q.angulo:.2f} · dilatação {q.dilatacao:.2f}</span><br>"
-            f"Cor: {f.cor_predominante} · Trama: {trama} · Textura: {textura}"
+            f"ângulo {q.angulo:.2f}</span><br>"
+            f"<b>Biometria:</b> íris ~{bio.diametro_iris_mm:.1f} mm · "
+            f"pupila ~{bio.diametro_pupila_mm:.1f} mm · razão {bio.razao_pupilar:.2f} "
+            f"({bio.dilatacao})<br>"
+            f"<b>Cor:</b> {f.cor_predominante} · <b>Trama:</b> {trama} · "
+            f"<b>Constituição:</b> {constituicao} · <b>Textura:</b> {textura}"
         )
         self._f, self._olho, self._zonas = f, olho, zonas
 
@@ -284,6 +286,13 @@ class MainWindow(QMainWindow):
         titdir.setStyleSheet(
             f"color:{TEXTO};font-size:12px;font-weight:600;letter-spacing:2px;")
         dir_box.addWidget(titdir)
+
+        self.resumo_lbl = QLabel("Capture para ver o resumo da análise.")
+        self.resumo_lbl.setWordWrap(True)
+        self.resumo_lbl.setStyleSheet(
+            f"background:{CARD};border:1px solid {BORDER};border-radius:12px;"
+            f"padding:12px;color:{TEXTO};font-size:12px;")
+        dir_box.addWidget(self.resumo_lbl)
         self.card_dir = CardOlho()
         self.card_esq = CardOlho()
         scroll = QScrollArea(); scroll.setWidgetResizable(True)
@@ -399,14 +408,40 @@ class MainWindow(QMainWindow):
                     o.raio_iris = refinar_iris(frame, o.centro, o.raio_iris)
                 except Exception:
                     pass
+            # Metricas por olho (pupila real, qualidade, biometria)
+            rps, qs, bios = [], [], []
+            for o in olhos:
+                rp = detectar_pupila(frame, o.centro, o.raio_iris)
+                rps.append(rp)
+                qs.append(avaliar_qualidade(frame, o, rp))
+                bios.append(medir_biometria(o, rp))
             cards = {"direito": self.card_dir, "esquerdo": self.card_esq}
-            for o, f in zip(olhos, feats):
-                cards[o.lado].atualizar(o, f, frame)
+            for o, f, rp, q, bio in zip(olhos, feats, rps, qs, bios):
+                cards[o.lado].atualizar(o, f, frame, rp, q, bio)
+            # Validacoes avancadas + comparacao entre olhos
+            val = validar_plausibilidade(olhos, qs, bios)
+            comp = comparar_olhos(olhos, feats)
+            self._atualizar_resumo(val, comp, bios)
             self.btn_pdf.setEnabled(True)
         except Exception:
             logging.getLogger("iris_analyzer").exception("Erro ao capturar/analisar")
             QMessageBox.warning(self, "Falha na análise",
                                 "Não foi possível analisar esta captura. Tente novamente.")
+
+    def _atualizar_resumo(self, val, comp, bios):
+        cor = "#5b8" if val.confianca >= 80 else "#7a9" if val.confianca >= 60 else "#c84"
+        html = (f"<b>Índice de confiança da análise: "
+                f"<span style='color:{cor}'>{val.confianca:.0f}/100</span></b>")
+        if comp is not None:
+            html += (f"<br><span style='color:{MUTED};font-size:11px'>"
+                     f"Simetria das íris: {comp.simetria_raio*100:.0f}% · {comp.nota}</span>")
+        if val.avisos:
+            itens = "".join(f"<li>{a}</li>" for a in val.avisos)
+            html += (f"<br><span style='color:#f0c060;font-size:11px'>"
+                     f"Atenção:</span><ul style='margin:2px 0'>{itens}</ul>")
+        else:
+            html += "<br><span style='color:#5b8;font-size:11px'>✔ Sem alertas de plausibilidade.</span>"
+        self.resumo_lbl.setText(html)
 
     def gerar_laudo(self):
         if not self._capturado:
@@ -427,6 +462,7 @@ class MainWindow(QMainWindow):
         base = os.path.splitext(destino)[0]
         anot = frame.copy()
         olhos_info = []
+        qs, bios = [], []
         for o, f in zip(olhos, feats):
             c = (int(o.centro[0]), int(o.centro[1]))
             cv2.circle(anot, c, int(o.raio_iris), (0, 255, 0), 2)
@@ -439,6 +475,8 @@ class MainWindow(QMainWindow):
             cv2.imwrite(zoom_p, cv2.resize(frame[y0:y1, x0:x1], (300, 300)))
             rp = detectar_pupila(frame, o.centro, o.raio_iris)
             q = avaliar_qualidade(frame, o, rp)
+            bio = medir_biometria(o, rp)
+            qs.append(q); bios.append(bio)
             daug_p = f"{base}_daugman_{o.lado}.jpg"
             cv2.imwrite(daug_p, heatmap_iris(frame, o.centro, o.raio_iris, rp))
             zonas = analisar_zonas(frame, o.centro, o.raio_iris, rp,
@@ -456,15 +494,27 @@ class MainWindow(QMainWindow):
                 "qualidade": f.qualidade_ok, "zoom_path": zoom_p, "daugman_path": daug_p,
                 "mapa_path": mapa_p, "zonas": tops,
                 "qualidade_score": f"{q.score:.0f}/100 ({q.nivel})",
+                "biometria": (f"íris ~{bio.diametro_iris_mm:.1f} mm · "
+                              f"pupila ~{bio.diametro_pupila_mm:.1f} mm · "
+                              f"razão {bio.razao_pupilar:.2f} ({bio.dilatacao})"),
+                "constituicao": "tensa" if f.densidade_fibras > 0.10 else "relaxada",
             })
         anot_p = f"{base}_captura.jpg"
         cv2.imwrite(anot_p, anot)
+        val = validar_plausibilidade(olhos, qs, bios)
+        comp = comparar_olhos(olhos, feats)
+        resumo = {
+            "confianca": f"{val.confianca:.0f}/100",
+            "avisos": val.avisos,
+            "comparacao": (f"Simetria das íris {comp.simetria_raio*100:.0f}% · {comp.nota}"
+                           if comp else ""),
+        }
         cliente = DadosCliente(
             nome=self.in_nome.text(), idade=self.in_idade.text(),
             data=self.in_data.text(), profissional=self.in_prof.text(),
             observacoes=self.in_obs.toPlainText())
         try:
-            caminho = gerar_pdf(destino, cliente, olhos_info, anot_p)
+            caminho = gerar_pdf(destino, cliente, olhos_info, anot_p, resumo)
             QMessageBox.information(self, "Laudo gerado",
                                     f"PDF salvo em:\n{caminho}")
         except Exception as e:

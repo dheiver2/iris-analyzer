@@ -57,6 +57,10 @@ sozinho. Preencha os dados do cliente e clique em **Gerar Laudo PDF**.
 - **Marcas**: lacunas como blobs + fibras via **filtro de Frangi**; **mapa de calor**
 - **Qualidade multi-fator** (0–100): foco por alta-frequência (FFT), oclusão,
   reflexo especular (limiar adaptativo), off-angle, dilatação pupilar e tamanho
+- **Biometria** (estimativa): diâmetro de íris/pupila (mm via HVID), razão
+  pupilar e classificação (miose/normal/midríase)
+- **Validações avançadas**: simetria entre olhos, razão pupilar fisiológica,
+  índice de confiança da análise e comparação (heterocromia)
 - **Mapa de zonas** (relógio de 12 setores da iridologia tradicional) com
   máscara de pálpebra/cílio e limiar absoluto — *sem valor diagnóstico*
 
@@ -80,6 +84,7 @@ iris-analyzer/
 │   ├── iris_features.py     #   Daugman + features + qualidade
 │   ├── iris_advanced.py     #   pupila real, CLAHE, Frangi, lacunas, heatmap
 │   ├── iris_quality.py      #   qualidade multi-fator
+│   ├── iris_metrics.py      #   biometria, validações avançadas, comparação
 │   ├── iris_map.py          #   mapa de zonas (iridologia)
 │   ├── captura_guiada.py    #   guia de captura + auto-disparo
 │   ├── pdf_report.py        #   laudo PDF

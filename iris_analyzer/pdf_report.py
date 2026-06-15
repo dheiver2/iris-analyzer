@@ -48,9 +48,11 @@ def gerar_pdf(
     cliente: DadosCliente,
     olhos_info: list[dict],
     imagem_anotada: str | None = None,
+    resumo: dict | None = None,
 ) -> str:
     """olhos_info: lista de dicts com chaves: lado, cor, trama, textura, nitidez,
-    reflexo, qualidade, zoom_path, daugman_path."""
+    reflexo, qualidade, zoom_path, daugman_path, biometria, constituicao.
+    resumo: dict opcional com confianca, avisos (list), comparacao."""
     if not caminho_pdf or not str(caminho_pdf).lower().endswith(".pdf"):
         raise ValueError(f"caminho_pdf deve terminar em .pdf: {caminho_pdf!r}.")
     if not isinstance(olhos_info, list):
@@ -84,6 +86,29 @@ def gerar_pdf(
     ]))
     el.append(t)
     el.append(Spacer(1, 6 * mm))
+
+    # Resumo da analise (confianca + validacoes + comparacao)
+    if resumo:
+        el.append(Paragraph("Resumo da análise", s["H2"]))
+        linhas = [["Índice de confiança", resumo.get("confianca", "—")]]
+        if resumo.get("comparacao"):
+            linhas.append(["Comparação dos olhos", resumo["comparacao"]])
+        avisos = resumo.get("avisos") or []
+        linhas.append(["Validações",
+                       "<br/>".join(avisos) if avisos else "Sem alertas de plausibilidade."])
+        tr = Table([[k, Paragraph(str(v), s["Cel"])] for k, v in linhas],
+                   colWidths=[50 * mm, 114 * mm])
+        tr.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#dddddd")),
+            ("BACKGROUND", (0, 0), (0, -1), CREME),
+            ("TEXTCOLOR", (0, 0), (0, -1), CINZA),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        el.append(tr)
+        el.append(Spacer(1, 6 * mm))
 
     if imagem_anotada and os.path.exists(imagem_anotada):
         el.append(Paragraph("Imagem capturada", s["H2"]))
@@ -124,8 +149,10 @@ def gerar_pdf(
 
         carac = [
             ["Qualidade da imagem (0-100)", o.get("qualidade_score", "—")],
+            ["Biometria (estimativa)", o.get("biometria", "—")],
             ["Cor predominante", o.get("cor", "—")],
             ["Trama de fibras", o.get("trama", "—")],
+            ["Constituição (tradicional)", o.get("constituicao", "—")],
             ["Textura", o.get("textura", "—")],
             ["Nitidez do foco", str(o.get("nitidez", "—"))],
             ["Reflexo de luz", f"{o.get('reflexo', '—')}%"],
