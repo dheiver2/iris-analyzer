@@ -345,23 +345,31 @@ class MainWindow(QMainWindow):
             logging.getLogger("iris_analyzer").exception("Erro no loop de camera")
 
     def _tick_inner(self):
-        if self.cap is None:
+        # (Re)abre a camera periodicamente enquanto nao estiver pronta. Isso
+        # cobre o caso em que a 1a tentativa falha porque a permissao de camera
+        # ainda esta pendente — assim que o usuario autoriza, conecta sozinho.
+        if self.cap is None or not self.cap.isOpened():
+            agora0 = time.time()
+            if agora0 - getattr(self, "_ultimo_open", 0) < 1.2:
+                return
+            self._ultimo_open = agora0
+            if self.cap is not None:
+                self.cap.release()
             self.cap = cv2.VideoCapture(config.CAMERA_INDEX)
             if not self.cap.isOpened():
-                self.video.setText("Câmera indisponível.\nAutorize em Ajustes > "
-                                   "Privacidade e Segurança > Câmera.")
+                self.video.setText(
+                    "Conectando à câmera…\n\nSe pedir permissão, autorize.\n"
+                    "Ou habilite em Ajustes › Privacidade e Segurança › Câmera.")
                 return
-            # Pede alta resolucao (mais pixels na iris = melhor qualidade)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.CAMERA_WIDTH)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.CAMERA_HEIGHT)
             w = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
             h = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            logging.getLogger("iris_analyzer").info(
-                "Câmera em %dx%d", int(w), int(h))
-        if not self.cap.isOpened():
-            return
+            logging.getLogger("iris_analyzer").info("Câmera em %dx%d", int(w), int(h))
         ok, frame = self.cap.read()
         if not ok:
+            # leitura falhou: solta para reabrir no proximo ciclo
+            self.cap.release()
             return
         frame = cv2.flip(frame, 1)
         agora = time.time()
