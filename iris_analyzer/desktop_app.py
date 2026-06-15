@@ -374,9 +374,14 @@ class MainWindow(QMainWindow):
             logging.getLogger("iris_analyzer").info("Câmera em %dx%d", int(w), int(h))
         ok, frame = self.cap.read()
         if not ok:
-            # leitura falhou: solta para reabrir no proximo ciclo
-            self.cap.release()
+            # Frame perdido e NORMAL — apenas ignora. So reabre se falhar muitas
+            # vezes seguidas (camera realmente caiu).
+            self._falhas = getattr(self, "_falhas", 0) + 1
+            if self._falhas > 30:
+                self._falhas = 0
+                self.cap.release()
             return
+        self._falhas = 0
         frame = cv2.flip(frame, 1)
         agora = time.time()
         if agora - self._ultimo_analise > 0.12:  # analisa ~8 fps
