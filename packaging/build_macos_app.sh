@@ -40,8 +40,18 @@ cat > "$SUPP/launch.sh" <<'EOF'
 cd "$HOME/Library/Application Support/IrisAnalyzer" || exit 1
 ARCH=""
 [ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ] && ARCH="arch -arm64"
-[ -f face_landmarker.task ] || $ARCH /usr/bin/python3 download_model.py
-exec $ARCH /usr/bin/python3 run.py
+LOG="$HOME/Library/Logs/IrisAnalyzer.log"
+echo "Iniciando Iris Analyzer..."
+[ -f face_landmarker.task ] || $ARCH /usr/bin/python3 download_model.py 2>&1 | tee "$LOG"
+# roda SEM exec (a shell sobrevive a saida do app) e loga tudo
+$ARCH /usr/bin/python3 run.py 2>&1 | tee -a "$LOG"
+COD=${PIPESTATUS[0]}
+echo ""
+echo "=================================================="
+echo " Iris Analyzer encerrado (codigo $COD). Log: $LOG"
+echo " Esta janela pode ser fechada. (Enter para fechar)"
+echo "=================================================="
+read _
 EOF
 chmod +x "$SUPP/launch.sh"
 
