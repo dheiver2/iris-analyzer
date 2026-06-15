@@ -33,14 +33,16 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$TMP/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 
+# launcher: roda direto (sem Terminal). Em Apple Silicon, forca arm64 para
+# carregar as libs nativas (numpy/cv2) — o launchd as vezes inicia em x86_64.
 cat > "$APP/Contents/MacOS/IrisAnalyzer" <<'EOF'
 #!/bin/bash
-osascript <<'OSA'
-tell application "Terminal"
-  activate
-  do script "clear; cd ~/Library/Application\\ Support/IrisAnalyzer && [ -f face_landmarker.task ] || /usr/bin/python3 download_model.py; /usr/bin/python3 run.py"
-end tell
-OSA
+cd "$HOME/Library/Application Support/IrisAnalyzer" || exit 1
+ARCHCMD=""
+[ "$(uname -m)" = "arm64" ] && ARCHCMD="arch -arm64"
+LOG="$HOME/Library/Logs/IrisAnalyzer.log"
+[ -f face_landmarker.task ] || $ARCHCMD /usr/bin/python3 download_model.py >"$LOG" 2>&1
+exec $ARCHCMD /usr/bin/python3 run.py >>"$LOG" 2>&1
 EOF
 chmod +x "$APP/Contents/MacOS/IrisAnalyzer"
 
@@ -56,6 +58,7 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleExecutable</key><string>IrisAnalyzer</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
+  <key>NSCameraUsageDescription</key><string>O Iris Analyzer usa a câmera para capturar a imagem da íris.</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>LSMinimumSystemVersion</key><string>11.0</string>
 </dict></plist>
