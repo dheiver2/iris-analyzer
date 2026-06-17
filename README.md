@@ -1,8 +1,8 @@
 # Iris Analyzer
 
-Aplicativo desktop para **análise de imagem da íris** (bem-estar e
-autoconhecimento). Captura pela webcam com **captura guiada**, segmenta a íris,
-extrai características e gera um **laudo em PDF**.
+Aplicação para **análise de imagem da íris** (bem-estar e autoconhecimento).
+Captura pela webcam, segmenta a íris, extrai características e gera um
+**laudo em PDF**. Vem em duas formas: **web app (recomendada)** e app desktop.
 
 > ⚠️ **Aviso importante**
 > A iridologia **não é reconhecida pela ciência** como método de diagnóstico.
@@ -23,7 +23,18 @@ pip install -r requirements.txt
 python3 download_model.py
 ```
 
-## Uso
+## Uso — Web app (recomendado)
+
+```bash
+python3 run_web.py
+```
+
+Abre no navegador (`http://127.0.0.1:8000`). A **câmera fica no navegador**
+(getUserMedia) — sem permissões de sistema, sem empacotamento, funciona em
+qualquer SO. O Python só analisa a imagem (backend FastAPI). É a forma mais
+estável: elimina os problemas de TCC/assinatura/arquitetura do app nativo.
+
+## Uso — App desktop (opcional)
 
 ```bash
 python3 run.py
@@ -76,10 +87,13 @@ A avaliação de qualidade segue os fatores consagrados em reconhecimento de ír
 
 ```
 iris-analyzer/
-├── run.py                  # inicia o app  (python3 run.py)
+├── run_web.py              # inicia a WEB APP (python3 run_web.py) — recomendado
+├── run.py                  # inicia o app desktop (PyQt6)
 ├── download_model.py       # baixa o modelo do MediaPipe
+├── web/index.html          # frontend web (câmera no navegador)
 ├── iris_analyzer/          # pacote
-│   ├── desktop_app.py      #   aplicativo principal (PyQt6)
+│   ├── server.py           #   backend web (FastAPI) — reusa a análise
+│   ├── desktop_app.py      #   aplicativo desktop (PyQt6)
 │   ├── iris_segmentation.py#   segmentação íris/pupila (MediaPipe)
 │   ├── iris_features.py     #   Daugman + features + qualidade
 │   ├── iris_advanced.py     #   pupila real, CLAHE, Frangi, lacunas, heatmap
