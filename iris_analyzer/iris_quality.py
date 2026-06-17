@@ -28,8 +28,23 @@ class Qualidade:
     angulo: float        # 0-1 (1 = frontal)
     dilatacao: float     # 0-1 (1 = ideal ~0.4)
     tamanho: float       # 0-1 (1 = iris grande o bastante)
+    abertura: float      # 0-1 (1 = olho bem aberto; baixo = semicerrado)
     score: float         # 0-100 (fusao ponderada)
     nivel: str           # "ruim" | "regular" | "boa" | "excelente"
+
+
+def _abertura_olho(contorno) -> float:
+    """Eye Aspect Ratio simplificado: altura/largura do contorno do olho.
+    Olho bem aberto ~0.30-0.50; semicerrado/piscando < 0.15."""
+    if contorno is None or len(contorno) < 4:
+        return 1.0
+    pts = np.asarray(contorno, dtype=np.float64)
+    larg = pts[:, 0].max() - pts[:, 0].min()
+    alt = pts[:, 1].max() - pts[:, 1].min()
+    if larg <= 1e-6:
+        return 1.0
+    ear = alt / larg
+    return float(np.clip(ear / 0.32, 0.0, 1.0))
 
 
 def _foco_alta_frequencia(gray_roi: np.ndarray) -> float:
@@ -124,18 +139,23 @@ def avaliar_qualidade(img, olho, r_pupila, raio_min=16.0) -> Qualidade:
     # --- Tamanho (contagem de pixels) ---
     tamanho = float(np.clip(r_iris / (raio_min * 2.5), 0.0, 1.0))
 
+    # --- Abertura do olho (EAR) ---
+    abertura = _abertura_olho(olho.contorno)
+
     # --- Fusao ponderada -> 0-100 ---
     score = 100.0 * (
-        0.30 * foco +
-        0.20 * (1.0 - oclusao) +
-        0.15 * (1.0 - min(reflexo / 0.08, 1.0)) +
-        0.15 * angulo +
-        0.10 * dilatacao +
-        0.10 * tamanho
+        0.28 * foco +
+        0.18 * (1.0 - oclusao) +
+        0.14 * (1.0 - min(reflexo / 0.08, 1.0)) +
+        0.14 * angulo +
+        0.08 * dilatacao +
+        0.08 * tamanho +
+        0.10 * abertura
     )
     score = float(np.clip(score, 0, 100))
     return Qualidade(
         foco=round(foco, 3), oclusao=round(oclusao, 3), reflexo=round(reflexo, 4),
         angulo=round(angulo, 3), dilatacao=round(dilatacao, 3),
-        tamanho=round(tamanho, 3), score=round(score, 1), nivel=_nivel(score),
+        tamanho=round(tamanho, 3), abertura=round(abertura, 3),
+        score=round(score, 1), nivel=_nivel(score),
     )

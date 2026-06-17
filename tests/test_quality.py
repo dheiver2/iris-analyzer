@@ -21,6 +21,7 @@ def test_qualidade_retorna_score(iris_sintetica):
     q = avaliar_qualidade(d["img"], _olho_de(d), d["r_pupila"])
     assert isinstance(q, Qualidade)
     assert 0.0 <= q.score <= 100.0
+    assert 0.0 <= q.abertura <= 1.0
     assert 0.0 <= q.foco <= 1.0
     assert 0.0 <= q.oclusao <= 1.0
     assert 0.0 <= q.angulo <= 1.0

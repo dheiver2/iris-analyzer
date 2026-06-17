@@ -32,7 +32,10 @@ from .iris_segmentation import detectar_face, criar_landmarker, Olho
 from .iris_features import extrair_features
 from .iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
 from .captura_guiada import avaliar, desenhar_guia, desenhar_malha, FRAMES_ESTAVEL
-from .iris_advanced import detectar_pupila, heatmap_iris, refinar_iris
+from .iris_advanced import (
+    detectar_pupila, detectar_pupila_centro, detectar_colarete,
+    heatmap_iris, refinar_iris,
+)
 from .iris_quality import avaliar_qualidade
 from .iris_metrics import (
     medir_biometria, validar_plausibilidade, comparar_olhos,
@@ -174,6 +177,11 @@ class CardOlho(QFrame):
         trama = "densa" if f.densidade_fibras > 0.10 else "lisa"
         textura = "uniforme" if f.glcm_homogeneidade > 0.5 else "com variações"
         constituicao = "tensa" if f.densidade_fibras > 0.10 else "relaxada"
+        try:
+            colarete = detectar_colarete(frame, olho.centro, olho.raio_iris, rp)
+        except Exception:
+            colarete = 0.0
+        col_txt = (f" · colarete ~{colarete*100:.0f}% do raio" if colarete > 0 else "")
         cor_q = {"ruim": "#c25", "regular": "#c84", "boa": "#7a9",
                  "excelente": "#5b8"}.get(q.nivel, MUTED)
         self.metricas.setText(
@@ -181,10 +189,10 @@ class CardOlho(QFrame):
             f"({q.nivel})</span><br>"
             f"<span style='color:{MUTED};font-size:10px'>foco {q.foco:.2f} · "
             f"oclusão {q.oclusao*100:.0f}% · reflexo {q.reflexo*100:.1f}% · "
-            f"ângulo {q.angulo:.2f}</span><br>"
+            f"ângulo {q.angulo:.2f} · abertura {q.abertura:.2f}</span><br>"
             f"<b>Biometria:</b> íris ~{bio.diametro_iris_mm:.1f} mm · "
             f"pupila ~{bio.diametro_pupila_mm:.1f} mm · razão {bio.razao_pupilar:.2f} "
-            f"({bio.dilatacao})<br>"
+            f"({bio.dilatacao}){col_txt}<br>"
             f"<b>Cor:</b> {f.cor_predominante} · <b>Trama:</b> {trama} · "
             f"<b>Constituição:</b> {constituicao} · <b>Textura:</b> {textura}"
         )
@@ -439,18 +447,24 @@ class MainWindow(QMainWindow):
                     o.raio_iris = refinar_iris(frame, o.centro, o.raio_iris)
                 except Exception:
                     pass
-            # Metricas por olho (pupila real, qualidade, biometria)
-            rps, qs, bios = [], [], []
+            # Metricas por olho (pupila real, qualidade, biometria, concentricidade)
+            rps, qs, bios, concentr = [], [], [], []
             for o in olhos:
                 rp = detectar_pupila(frame, o.centro, o.raio_iris)
                 rps.append(rp)
                 qs.append(avaliar_qualidade(frame, o, rp))
                 bios.append(medir_biometria(o, rp))
+                try:
+                    pcx, pcy, _ = detectar_pupila_centro(frame, o.centro, o.raio_iris)
+                    off = ((pcx - o.centro[0]) ** 2 + (pcy - o.centro[1]) ** 2) ** 0.5
+                    concentr.append(off / o.raio_iris if o.raio_iris else 0.0)
+                except Exception:
+                    concentr.append(0.0)
             cards = {"direito": self.card_dir, "esquerdo": self.card_esq}
             for o, f, rp, q, bio in zip(olhos, feats, rps, qs, bios):
                 cards[o.lado].atualizar(o, f, frame, rp, q, bio)
             # Validacoes avancadas + comparacao entre olhos
-            val = validar_plausibilidade(olhos, qs, bios)
+            val = validar_plausibilidade(olhos, qs, bios, concentr)
             comp = comparar_olhos(olhos, feats)
             self._atualizar_resumo(val, comp, bios)
             self.btn_pdf.setEnabled(True)

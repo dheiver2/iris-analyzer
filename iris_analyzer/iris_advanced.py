@@ -16,6 +16,7 @@ import numpy as np
 from skimage.filters import frangi
 
 from .validation import validar_imagem, validar_geometria, GeometriaInvalidaError
+from .iris_features import remover_reflexo
 
 
 def refinar_iris(imagem_bgr, centro, r_iris, busca=0.16, n_amostras=180) -> float:
@@ -99,11 +100,84 @@ def detectar_pupila(imagem_bgr, centro, r_iris) -> float:
         circ = area / (np.pi * pr * pr + 1e-6)        # circularidade
         dist = np.hypot(px - cxr, py - cyr)
         if circ > 0.55 and dist < r * 0.5:
-            if melhor is None or pr > melhor:
-                melhor = pr
+            if melhor is None or pr > melhor[0]:
+                melhor = (pr, px + x0, py + y0)
     if melhor is None:
         return max(r_iris * 0.45, 2.0)
-    return float(np.clip(melhor, r_iris * 0.15, r_iris * 0.75))
+    return float(np.clip(melhor[0], r_iris * 0.15, r_iris * 0.75))
+
+
+def detectar_pupila_centro(imagem_bgr, centro, r_iris):
+    """Como detectar_pupila, mas retorna (cx, cy, raio) do disco da pupila.
+
+    Centro cai para o centro da iris se a pupila nao for localizada — util
+    para checar concentricidade pupila/iris.
+    """
+    validar_imagem(imagem_bgr, "imagem_bgr")
+    if not (r_iris > 0):
+        raise GeometriaInvalidaError(f"r_iris deve ser > 0, recebido {r_iris!r}.")
+    cx, cy = int(round(centro[0])), int(round(centro[1]))
+    r = int(round(r_iris))
+    h, w = imagem_bgr.shape[:2]
+    x0, y0 = max(0, cx - r), max(0, cy - r)
+    x1, y1 = min(w, cx + r), min(h, cy + r)
+    roi = imagem_bgr[y0:y1, x0:x1]
+    if roi.size == 0:
+        return (float(centro[0]), float(centro[1]), max(r_iris * 0.45, 2.0))
+    gray = cv2.GaussianBlur(cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY), (5, 5), 0)
+    thr = np.percentile(gray, 12)
+    escuro = (gray <= thr).astype(np.uint8) * 255
+    escuro = cv2.morphologyEx(escuro, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    escuro = cv2.morphologyEx(escuro, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+    cnts, _ = cv2.findContours(escuro, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cxr, cyr = cx - x0, cy - y0
+    melhor = None
+    for c in cnts:
+        (px, py), pr = cv2.minEnclosingCircle(c)
+        area = cv2.contourArea(c)
+        if pr < r * 0.12 or pr > r * 0.75:
+            continue
+        circ = area / (np.pi * pr * pr + 1e-6)
+        if circ > 0.55 and np.hypot(px - cxr, py - cyr) < r * 0.5:
+            if melhor is None or pr > melhor[0]:
+                melhor = (pr, px + x0, py + y0)
+    if melhor is None:
+        return (float(centro[0]), float(centro[1]), max(r_iris * 0.45, 2.0))
+    pr = float(np.clip(melhor[0], r_iris * 0.15, r_iris * 0.75))
+    return (float(melhor[1]), float(melhor[2]), pr)
+
+
+def detectar_colarete(imagem_bgr, centro, r_iris, r_pupila) -> float:
+    """Estima o raio do anel de colarete (fronteira zona pupilar/ciliar).
+
+    Amostra o perfil radial medio de intensidade entre a pupila e ~60% da iris
+    e retorna o raio (em px) do gradiente mais forte — onde a textura muda.
+    Retorna a razao colarete/iris util para descricao. 0 se nao detectado.
+    """
+    validar_imagem(imagem_bgr, "imagem_bgr")
+    img = remover_reflexo(imagem_bgr, centro, r_iris)
+    gray = cv2.GaussianBlur(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), (3, 3), 0).astype(np.float32)
+    h, w = gray.shape
+    cx, cy = float(centro[0]), float(centro[1])
+    r0, r1 = r_pupila * 1.05, r_iris * 0.62
+    if r1 <= r0:
+        return 0.0
+    raios = np.arange(r0, r1, 0.5)
+    thetas = np.linspace(0, 2 * np.pi, 180, endpoint=False)
+    cos_t, sin_t = np.cos(thetas), np.sin(thetas)
+    perfil = []
+    for r in raios:
+        xs = np.clip(np.round(cx + r * cos_t).astype(int), 0, w - 1)
+        ys = np.clip(np.round(cy + r * sin_t).astype(int), 0, h - 1)
+        perfil.append(float(gray[ys, xs].mean()))
+    perfil = np.array(perfil)
+    k = np.array([1, 4, 6, 4, 1], np.float32); k /= k.sum()
+    suave = np.convolve(np.pad(perfil, 2, mode="edge"), k, mode="valid")
+    deriv = np.abs(np.gradient(suave))
+    deriv[:2] = 0; deriv[-2:] = 0
+    if not np.any(deriv > 0):
+        return 0.0
+    return float(raios[int(np.argmax(deriv))] / r_iris)
 
 
 def realcar_clahe(imagem_bgr) -> np.ndarray:

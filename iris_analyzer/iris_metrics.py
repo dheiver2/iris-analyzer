@@ -52,9 +52,14 @@ class Validacao:
     confianca: float              # 0-100, confianca global da analise
 
 
-def validar_plausibilidade(olhos, qualidades, biometrias) -> Validacao:
+def validar_plausibilidade(olhos, qualidades, biometrias,
+                            concentricidades=None) -> Validacao:
     """Checagens avancadas alem da validacao de entrada: simetria dos olhos,
-    razao pupilar fisiologica, tamanho minimo e qualidade."""
+    razao pupilar fisiologica, tamanho minimo, olho semicerrado,
+    concentricidade pupila/iris e qualidade.
+
+    concentricidades: lista opcional de offsets pupila-iris normalizados por
+    r_iris (0 = perfeitamente concentrico)."""
     avisos: list[str] = []
 
     if len(olhos) < 2:
@@ -77,6 +82,14 @@ def validar_plausibilidade(olhos, qualidades, biometrias) -> Validacao:
     # tamanho minimo
     if olhos and min(o.raio_iris for o in olhos) < 14:
         avisos.append("Íris pequena na imagem — aproxime para mais detalhe.")
+
+    # olho semicerrado / piscada (EAR baixo)
+    if qualidades and min((getattr(q, "abertura", 1.0) for q in qualidades), default=1.0) < 0.5:
+        avisos.append("Olho parcialmente fechado — abra bem os olhos.")
+
+    # concentricidade pupila/iris (offset grande = angulo ou deteccao ruim)
+    if concentricidades and max(concentricidades, default=0.0) > 0.22:
+        avisos.append("Pupila descentralizada na íris — olhe de frente para a câmera.")
 
     # confianca = media da qualidade penalizada por avisos
     base = float(np.mean([q.score for q in qualidades])) if qualidades else 0.0

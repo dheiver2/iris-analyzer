@@ -4,8 +4,23 @@ import pytest
 
 from iris_analyzer.iris_advanced import (
     detectar_pupila, realcar_clahe, fibras_frangi, detectar_lacunas, heatmap_iris,
-    refinar_iris,
+    refinar_iris, detectar_pupila_centro, detectar_colarete,
 )
+
+
+def test_pupila_centro(iris_sintetica):
+    d = iris_sintetica
+    cx, cy, r = detectar_pupila_centro(d["img"], d["centro"], d["r_iris"])
+    # pupila sintetica centrada -> centro perto do centro da iris
+    assert abs(cx - d["centro"][0]) < d["r_iris"] * 0.3
+    assert abs(cy - d["centro"][1]) < d["r_iris"] * 0.3
+    assert r > 0
+
+
+def test_colarete_ratio(iris_sintetica):
+    d = iris_sintetica
+    rc = detectar_colarete(d["img"], d["centro"], d["r_iris"], d["r_pupila"])
+    assert 0.0 <= rc < 1.0
 from iris_analyzer.iris_segmentation import _circulo_de_pontos
 from iris_analyzer.validation import ImagemInvalidaError, GeometriaInvalidaError
 

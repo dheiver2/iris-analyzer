@@ -9,8 +9,8 @@ def _olho(cx, cy, r, lado="direito"):
     return types.SimpleNamespace(centro=(cx, cy), raio_iris=r, lado=lado)
 
 
-def _q(score):
-    return types.SimpleNamespace(score=score)
+def _q(score, abertura=1.0):
+    return types.SimpleNamespace(score=score, abertura=abertura)
 
 
 def _feat(lab):
@@ -44,6 +44,20 @@ def test_validacao_assimetria_gera_aviso():
     bios = [medir_biometria(o, 20) for o in olhos]
     val = validar_plausibilidade(olhos, [_q(85), _q(85)], bios)
     assert any("diferentes" in a for a in val.avisos)
+
+
+def test_validacao_olho_semicerrado():
+    olhos = [_olho(0, 0, 50, "direito"), _olho(0, 0, 50, "esquerdo")]
+    bios = [medir_biometria(o, 20) for o in olhos]
+    val = validar_plausibilidade(olhos, [_q(85, abertura=0.2), _q(85, abertura=0.2)], bios)
+    assert any("fechado" in a for a in val.avisos)
+
+
+def test_validacao_concentricidade():
+    olhos = [_olho(0, 0, 50, "direito"), _olho(0, 0, 50, "esquerdo")]
+    bios = [medir_biometria(o, 20) for o in olhos]
+    val = validar_plausibilidade(olhos, [_q(85), _q(85)], bios, concentricidades=[0.4, 0.1])
+    assert any("descentralizada" in a for a in val.avisos)
 
 
 def test_comparar_heterocromia():
