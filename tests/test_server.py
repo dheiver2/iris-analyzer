@@ -5,7 +5,8 @@ import pytest
 
 try:
     from fastapi.testclient import TestClient
-    from iris_analyzer.server import app, _b64, _decodificar
+
+    from iris_analyzer.server import _b64, _decodificar, app
     _OK = True
 except Exception:
     _OK = False

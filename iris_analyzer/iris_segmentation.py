@@ -9,8 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import cv2
-import numpy as np
 import mediapipe as mp
+import numpy as np
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import (
     FaceLandmarker,
@@ -19,7 +19,7 @@ from mediapipe.tasks.python.vision import (
 )
 
 from . import config
-from .validation import validar_imagem, ModeloAusenteError
+from .validation import ModeloAusenteError, validar_imagem
 
 _MODELO = str(config.MODELO_PATH)
 

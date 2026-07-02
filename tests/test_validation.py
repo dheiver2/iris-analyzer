@@ -2,8 +2,12 @@ import numpy as np
 import pytest
 
 from iris_analyzer.validation import (
-    validar_imagem, validar_geometria, validar_lado,
-    ImagemInvalidaError, GeometriaInvalidaError, IrisError,
+    GeometriaInvalidaError,
+    ImagemInvalidaError,
+    IrisError,
+    validar_geometria,
+    validar_imagem,
+    validar_lado,
 )
 
 

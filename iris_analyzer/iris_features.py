@@ -11,9 +11,9 @@ from dataclasses import dataclass, field
 
 import cv2
 import numpy as np
-from skimage.feature import local_binary_pattern, graycomatrix, graycoprops
+from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
 
-from .validation import validar_imagem, validar_geometria
+from .validation import validar_geometria, validar_imagem
 
 
 @dataclass

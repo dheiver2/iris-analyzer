@@ -11,12 +11,16 @@ from dataclasses import dataclass
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle,
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
 )
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-
 
 MARCA = colors.HexColor("#E94A12")   # laranja (identidade visual)
 CREME = colors.HexColor("#FBF6EF")
@@ -121,7 +125,7 @@ def gerar_pdf(
         el.append(Paragraph(f"Olho {o['lado']}", s["H2"]))
         imgs = []
         row = []
-        for chave, rotulo in (("zoom_path", "Íris (zoom)"),
+        for chave, _rotulo in (("zoom_path", "Íris (zoom)"),
                               ("daugman_path", "Mapa de calor das marcas")):
             p = o.get(chave)
             if p and os.path.exists(p):

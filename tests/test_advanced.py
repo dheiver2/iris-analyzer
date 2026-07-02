@@ -3,9 +3,17 @@ import numpy as np
 import pytest
 
 from iris_analyzer.iris_advanced import (
-    detectar_pupila, realcar_clahe, fibras_frangi, detectar_lacunas, heatmap_iris,
-    refinar_iris, detectar_pupila_centro, detectar_colarete,
+    detectar_colarete,
+    detectar_lacunas,
+    detectar_pupila,
+    detectar_pupila_centro,
+    fibras_frangi,
+    heatmap_iris,
+    realcar_clahe,
+    refinar_iris,
 )
+from iris_analyzer.iris_segmentation import _circulo_de_pontos
+from iris_analyzer.validation import GeometriaInvalidaError, ImagemInvalidaError
 
 
 def test_pupila_centro(iris_sintetica):
@@ -21,8 +29,6 @@ def test_colarete_ratio(iris_sintetica):
     d = iris_sintetica
     rc = detectar_colarete(d["img"], d["centro"], d["r_iris"], d["r_pupila"])
     assert 0.0 <= rc < 1.0
-from iris_analyzer.iris_segmentation import _circulo_de_pontos
-from iris_analyzer.validation import ImagemInvalidaError, GeometriaInvalidaError
 
 
 def test_circulo_fit_exato():

@@ -11,7 +11,6 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-
 # Limiares de qualidade
 RAIO_MIN = 16.0        # px — iris grande o bastante (aproxime o rosto)
 NITIDEZ_MIN = 40.0

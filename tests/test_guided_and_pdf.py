@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from iris_analyzer.captura_guiada import avaliar
-from iris_analyzer.pdf_report import gerar_pdf, DadosCliente
+from iris_analyzer.pdf_report import DadosCliente, gerar_pdf
 
 
 def _olho(cx, cy, r):

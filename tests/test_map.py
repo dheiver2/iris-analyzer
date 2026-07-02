@@ -1,6 +1,6 @@
 import pytest
 
-from iris_analyzer.iris_map import analisar_zonas, render_mapa, top_zonas, Zona
+from iris_analyzer.iris_map import Zona, analisar_zonas, render_mapa, top_zonas
 from iris_analyzer.validation import IrisError
 
 

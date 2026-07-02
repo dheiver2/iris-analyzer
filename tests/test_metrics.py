@@ -1,7 +1,10 @@
 import types
 
 from iris_analyzer.iris_metrics import (
-    medir_biometria, validar_plausibilidade, comparar_olhos, Biometria,
+    Biometria,
+    comparar_olhos,
+    medir_biometria,
+    validar_plausibilidade,
 )
 
 

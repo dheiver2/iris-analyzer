@@ -11,6 +11,7 @@ Recursos:
 """
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import time
@@ -18,29 +19,44 @@ import time
 import cv2
 import numpy as np
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QImage, QPixmap, QFont
+from PyQt6.QtGui import QFont, QImage, QPixmap
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QLabel, QPushButton, QVBoxLayout,
-    QHBoxLayout, QGridLayout, QLineEdit, QTextEdit, QFrame, QScrollArea,
-    QFileDialog, QMessageBox, QSizePolicy, QCheckBox,
+    QApplication,
+    QCheckBox,
+    QFileDialog,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-
-import logging
 
 from . import config
-from .iris_segmentation import detectar_face, criar_landmarker, Olho
-from .iris_features import extrair_features
-from .iris_map import analisar_zonas, render_mapa, top_zonas, resumo_qualidade
-from .captura_guiada import avaliar, desenhar_guia, desenhar_malha, FRAMES_ESTAVEL
+from .captura_guiada import FRAMES_ESTAVEL, avaliar, desenhar_guia, desenhar_malha
 from .iris_advanced import (
-    detectar_pupila, detectar_pupila_centro, detectar_colarete,
-    heatmap_iris, refinar_iris,
+    detectar_colarete,
+    detectar_pupila,
+    detectar_pupila_centro,
+    heatmap_iris,
+    refinar_iris,
+)
+from .iris_features import extrair_features
+from .iris_map import analisar_zonas, render_mapa, resumo_qualidade, top_zonas
+from .iris_metrics import (
+    comparar_olhos,
+    medir_biometria,
+    validar_plausibilidade,
 )
 from .iris_quality import avaliar_qualidade
-from .iris_metrics import (
-    medir_biometria, validar_plausibilidade, comparar_olhos,
-)
-from .pdf_report import gerar_pdf, DadosCliente
+from .iris_segmentation import Olho, criar_landmarker, detectar_face
+from .pdf_report import DadosCliente, gerar_pdf
 
 # Paleta
 # Paleta minimalista — preto real, monocromatica, acento branco.

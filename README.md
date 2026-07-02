@@ -1,5 +1,9 @@
 # Iris Analyzer
 
+[![tests](https://github.com/dheiver2/iris-analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/dheiver2/iris-analyzer/actions/workflows/tests.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+
 Aplicação para **análise de imagem da íris** (bem-estar e autoconhecimento).
 Captura pela webcam, segmenta a íris, extrai características e gera um
 **laudo em PDF**. Vem em duas formas: **web app (recomendada)** e app desktop.
@@ -33,6 +37,13 @@ Abre no navegador (`http://127.0.0.1:8000`). A **câmera fica no navegador**
 (getUserMedia) — sem permissões de sistema, sem empacotamento, funciona em
 qualquer SO. O Python só analisa a imagem (backend FastAPI). É a forma mais
 estável: elimina os problemas de TCC/assinatura/arquitetura do app nativo.
+
+Também dá para rodar via Docker (só a web app, sem PyQt6):
+
+```bash
+docker build -t iris-analyzer .
+docker run --rm -p 8000:8000 iris-analyzer
+```
 
 ## Uso — App desktop (opcional)
 
@@ -108,18 +119,33 @@ iris-analyzer/
 └── docs/                   # GitHub Pages
 ```
 
+## Privacidade
+
+Nenhuma imagem ou laudo é enviado a servidores de terceiros: a captura e a
+análise rodam localmente (navegador + backend Python na própria máquina).
+Nada é persistido em disco pelo servidor além de arquivos temporários que são
+apagados antes da resposta. Detalhes e variáveis de configuração de
+segurança (limite de upload, CORS, host/porta) em [SECURITY.md](SECURITY.md)
+e [.env.example](.env.example).
+
 ## Desenvolvimento
 
 ```bash
-pip install -r requirements.txt pytest
-pytest -q          # roda a suíte de testes
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q                 # roda a suíte de testes
+ruff check .              # lint
+pre-commit install        # roda lint automaticamente antes de cada commit
 ```
 
 Estrutura de qualidade:
 - `config.py` — configuração central (sobrescreve por env `IRIS_*`)
 - `validation.py` — validações de entrada e exceções (`IrisError` e subclasses)
 - `tests/` — testes com pytest (validação, features, mapa, técnicas, PDF)
-- CI em `.github/workflows/tests.yml`
+- CI em `.github/workflows/tests.yml` (testes + lint)
+
+Quer contribuir? Veja [CONTRIBUTING.md](CONTRIBUTING.md) e o
+[CHANGELOG.md](CHANGELOG.md). Este projeto segue um
+[Código de Conduta](CODE_OF_CONDUCT.md).
 
 ## Boas fotos
 

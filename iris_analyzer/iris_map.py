@@ -17,10 +17,9 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+from .iris_advanced import fibras_frangi, realcar_clahe
 from .iris_features import normalizar_daugman, remover_reflexo
-from .iris_advanced import realcar_clahe, fibras_frangi
-from .validation import validar_imagem, validar_geometria, validar_lado
-
+from .validation import validar_geometria, validar_imagem, validar_lado
 
 ZONAS_DIREITO = [
     "Cérebro / mente", "Seios da face", "Garganta e pescoço",

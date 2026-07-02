@@ -15,8 +15,8 @@ import cv2
 import numpy as np
 from skimage.filters import frangi
 
-from .validation import validar_imagem, validar_geometria, GeometriaInvalidaError
 from .iris_features import remover_reflexo
+from .validation import GeometriaInvalidaError, validar_geometria, validar_imagem
 
 
 def refinar_iris(imagem_bgr, centro, r_iris, busca=0.16, n_amostras=180) -> float:

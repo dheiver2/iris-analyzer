@@ -2,9 +2,12 @@ import numpy as np
 import pytest
 
 from iris_analyzer.iris_features import (
-    normalizar_daugman, extrair_features, remover_reflexo, FeaturesIris,
+    FeaturesIris,
+    extrair_features,
+    normalizar_daugman,
+    remover_reflexo,
 )
-from iris_analyzer.validation import ImagemInvalidaError, GeometriaInvalidaError
+from iris_analyzer.validation import GeometriaInvalidaError, ImagemInvalidaError
 
 
 def test_daugman_shape(iris_sintetica):

@@ -48,4 +48,14 @@ MARCA_MIN = 0.40
 DAUGMAN_ALTURA = 64
 DAUGMAN_LARGURA = 256
 
+# --- Web app (server.py) ---
+# Tamanho maximo de upload de imagem, em bytes (padrao 15 MB).
+MAX_UPLOAD_BYTES = int(os.environ.get("IRIS_MAX_UPLOAD_MB", "15")) * 1024 * 1024
+# Origens permitidas para CORS (separadas por virgula). Vazio = sem CORS
+# extra (mesma-origem apenas), seguro para o uso padrao local.
+CORS_ORIGINS = [o.strip() for o in os.environ.get("IRIS_CORS_ORIGINS", "").split(",") if o.strip()]
+# Host/porta do servidor web.
+WEB_HOST = os.environ.get("IRIS_WEB_HOST", "127.0.0.1")
+WEB_PORT = int(os.environ.get("IRIS_WEB_PORT", "8000"))
+
 __all__ = [name for name in dir() if name.isupper()]

@@ -45,8 +45,8 @@ def validar_geometria(centro, r_iris, r_pupila, shape=None) -> None:
     """Valida centro (x,y), raios > 0 e r_pupila < r_iris (e dentro da imagem)."""
     try:
         cx, cy = float(centro[0]), float(centro[1])
-    except (TypeError, IndexError, ValueError):
-        raise GeometriaInvalidaError(f"centro invalido: {centro!r}.")
+    except (TypeError, IndexError, ValueError) as e:
+        raise GeometriaInvalidaError(f"centro invalido: {centro!r}.") from e
     if not (r_iris > 0):
         raise GeometriaInvalidaError(f"r_iris deve ser > 0, recebido {r_iris!r}.")
     if not (0 < r_pupila < r_iris):

@@ -1,0 +1,10 @@
+# Subconjunto de requirements.txt sem o PyQt6 (app desktop), usado pelo
+# Dockerfile e por quem so quer rodar a web app sem instalar Qt.
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+mediapipe>=0.10.0
+scikit-image>=0.21.0
+reportlab>=4.0.0
+fastapi>=0.110.0
+uvicorn>=0.27.0
+python-multipart>=0.0.9
