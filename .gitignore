@@ -1,35 +1,11 @@
-# Python
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-*.egg-info/
-build/
-dist/
-.pytest_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-.env
+# Artefatos de build do SwiftPM
+.build/
+.swiftpm/
+Package.resolved
 
-# Assets de teste (baixados localmente)
-tests/assets/
-
-# Saidas geradas
-foto.jpg
-snapshot_*.jpg
-laudo_*.pdf
-*_anotada.jpg
-*_daugman_*.jpg
-*_zoom_*.jpg
-*_mapa_*.jpg
-*_captura.jpg
-*_heat_*.jpg
-_*.jpg
-_*.pdf
-
-# Modelo do MediaPipe (baixar via script — ver README)
-face_landmarker.task
-
-# Sistema
+# macOS
 .DS_Store
+
+# App gerado
+*.app
+*.dmg

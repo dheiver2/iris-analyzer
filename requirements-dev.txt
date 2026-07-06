@@ -1,6 +1,0 @@
-# Dependencias de desenvolvimento (alem de requirements.txt).
-# pip install -r requirements.txt -r requirements-dev.txt
-pytest>=7.0
-pytest-cov>=4.0
-ruff>=0.4
-pre-commit>=3.5
