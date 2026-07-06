@@ -27,6 +27,17 @@ pip install -r requirements.txt
 python3 download_model.py
 ```
 
+## App nativo macOS (Swift) — `native-macos/`
+
+Há também uma reescrita **100% nativa em Swift/SwiftUI** (sem Python/Qt/MediaPipe),
+usando AVFoundation, Vision, Accelerate e PDFKit. Veja
+[`native-macos/README.md`](native-macos/README.md):
+
+```bash
+cd native-macos
+swift build -c release && bash build_app.sh   # gera "Iris Analyzer.app"
+```
+
 ## Uso — Web app (recomendado)
 
 ```bash

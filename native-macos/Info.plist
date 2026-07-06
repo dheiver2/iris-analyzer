@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key><string>Iris Analyzer</string>
+    <key>CFBundleDisplayName</key><string>Iris Analyzer</string>
+    <key>CFBundleIdentifier</key><string>br.com.dheiver.irisanalyzer.native</string>
+    <key>CFBundleVersion</key><string>2.0.0</string>
+    <key>CFBundleShortVersionString</key><string>2.0.0</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleExecutable</key><string>IrisAnalyzer</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>LSMinimumSystemVersion</key><string>13.0</string>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSCameraUsageDescription</key><string>O Iris Analyzer usa a câmera para capturar a imagem da íris para análise de bem-estar. Nenhuma imagem é enviada para servidores.</string>
+    <key>NSPrincipalClass</key><string>NSApplication</string>
+    <key>LSApplicationCategoryType</key><string>public.app-category.healthcare-fitness</string>
+</dict>
+</plist>

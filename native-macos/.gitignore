@@ -1,0 +1,11 @@
+# Artefatos de build do SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# macOS
+.DS_Store
+
+# App gerado
+*.app
+*.dmg
