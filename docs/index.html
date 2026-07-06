@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iris Analyzer — Nativo macOS (Swift)</title>
+<meta name="description" content="App nativo macOS de análise de imagem da íris para bem-estar. Swift/SwiftUI + Vision + AVFoundation + Accelerate + PDFKit. Não é dispositivo médico.">
+<style>
+  :root{
+    --bg:#0B0B0C; --elev:#111114; --card:#151519; --border:#26262C;
+    --text:#F2F2F5; --muted:#8A8A92; --faint:#55555C;
+    --accent:#8B7CFF; --accent2:#6B5CE0; --blue:#4E86E0; --cyan:#54E0C7; --amber:#F0C060;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:900px;margin:0 auto;padding:0 24px}
+  .glow{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(600px 400px at 50% -50px, rgba(139,124,255,.18), transparent 70%)}
+  header{position:relative;z-index:1;text-align:center;padding:72px 0 40px}
+  .icon{width:120px;height:120px;border-radius:27px;box-shadow:0 20px 60px rgba(139,124,255,.25)}
+  h1{font-size:44px;font-weight:800;letter-spacing:-.5px;margin:24px 0 8px}
+  .grad{background:linear-gradient(90deg,var(--accent),var(--accent2),var(--blue));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .tag{color:var(--muted);font-size:17px;max-width:560px;margin:0 auto}
+  .pill{display:inline-block;margin:18px 6px 0;padding:6px 14px;border:1px solid var(--border);
+    border-radius:999px;font-size:12px;color:var(--muted);background:var(--elev)}
+  .cta{margin-top:32px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{padding:12px 22px;border-radius:11px;font-weight:600;font-size:14px;display:inline-block}
+  .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff}
+  .btn-ghost{border:1px solid var(--border);color:var(--text)}
+  .btn:hover{text-decoration:none;opacity:.9}
+  section{position:relative;z-index:1;padding:36px 0}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);
+    margin-bottom:20px;font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+  .card h3{font-size:15px;margin-bottom:6px}
+  .card p{font-size:13px;color:var(--muted)}
+  .card .k{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  td:first-child{color:var(--muted);width:42%}
+  td:last-child{color:var(--text)}
+  pre{background:#0E0E11;border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+    overflow-x:auto;font-size:13px;color:#d8d8e0;margin-top:12px}
+  code{font-family:"SF Mono",ui-monospace,Menlo,monospace}
+  .warn{background:rgba(240,192,96,.08);border:1px solid rgba(240,192,96,.3);
+    border-radius:12px;padding:16px 18px;font-size:13px;color:#e9d29a}
+  footer{position:relative;z-index:1;text-align:center;padding:48px 0;color:var(--faint);font-size:12px;
+    border-top:1px solid var(--border);margin-top:24px}
+  @media(max-width:600px){h1{font-size:34px}.icon{width:96px;height:96px}}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<header>
+  <div class="wrap">
+    <img class="icon" src="icon.png" alt="Iris Analyzer">
+    <h1><span class="grad">Iris Analyzer</span></h1>
+    <p class="tag">App <strong>nativo macOS</strong> de análise de imagem da íris para
+      bem-estar e autoconhecimento. Captura pela câmera, segmenta a íris, extrai
+      características e gera um laudo em PDF.</p>
+    <div>
+      <span class="pill">Swift / SwiftUI</span>
+      <span class="pill">Vision.framework</span>
+      <span class="pill">AVFoundation</span>
+      <span class="pill">Accelerate</span>
+      <span class="pill">PDFKit</span>
+    </div>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/dheiver2/iris-analyzer">Ver no GitHub</a>
+      <a class="btn btn-ghost" href="https://github.com/dheiver2/iris-analyzer#readme">Como compilar</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="warn">
+      ⚠️ <strong>Aviso:</strong> a iridologia <strong>não é reconhecida pela ciência</strong>
+      como método de diagnóstico. Este projeto é <strong>educacional / bem-estar</strong>,
+      extrai características objetivas de imagem e as descreve. <strong>Nada aqui é
+      diagnóstico médico</strong> — procure sempre um profissional de saúde.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Recursos</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="k">Segmentação</div>
+        <h3>Operador de Daugman</h3>
+        <p>Refino sub-pixel das bordas da íris e pupila pelo operador
+          integro-diferencial, sobre landmarks do Vision.framework.</p>
+      </div>
+      <div class="card">
+        <div class="k">Textura</div>
+        <h3>LBP · GLCM · Gabor</h3>
+        <p>Normalização rubber-sheet e extração de características de textura
+          e nitidez com Accelerate.</p>
+      </div>
+      <div class="card">
+        <div class="k">Qualidade</div>
+        <h3>Score multi-fator</h3>
+        <p>Foco, oclusão, reflexo especular, ângulo, dilatação e tamanho —
+          baseado na literatura de reconhecimento de íris.</p>
+      </div>
+      <div class="card">
+        <div class="k">Biometria</div>
+        <h3>Estimativas por HVID</h3>
+        <p>Diâmetro de íris/pupila em mm, razão pupilar e classificação
+          (miose / normal / midríase).</p>
+      </div>
+      <div class="card">
+        <div class="k">Laudo</div>
+        <h3>PDF nativo</h3>
+        <p>Relatório com imagens, métricas e comparação entre olhos, gerado
+          com Core Graphics / PDFKit.</p>
+      </div>
+      <div class="card">
+        <div class="k">Privacidade</div>
+        <h3>100% local</h3>
+        <p>Captura e análise rodam na própria máquina. Nenhuma imagem é
+          enviada a servidores de terceiros.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Stack nativa</h2>
+    <div class="card" style="padding:6px 8px">
+      <table>
+        <tr><td>Interface</td><td>SwiftUI (tema escuro, acento índigo/ciano)</td></tr>
+        <tr><td>Câmera</td><td>AVFoundation</td></tr>
+        <tr><td>Landmarks faciais</td><td>Vision.framework (VNDetectFaceLandmarksRequest)</td></tr>
+        <tr><td>Visão computacional</td><td>Swift + Accelerate / Core Graphics</td></tr>
+        <tr><td>Laudo</td><td>Core Graphics / AppKit PDF</td></tr>
+        <tr><td>Sem dependências externas</td><td>sem Python, sem Qt, sem MediaPipe</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Compilar e rodar</h2>
+    <p style="color:var(--muted);font-size:14px">Requer apenas Command Line Tools (não precisa Xcode completo):</p>
+    <pre><code>git clone https://github.com/dheiver2/iris-analyzer.git
+cd iris-analyzer
+swift build -c release
+bash build_app.sh        # gera "Iris Analyzer.app" na Área de Trabalho</code></pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Iris Analyzer · nativo macOS · MIT License ·
+    <a href="https://github.com/dheiver2/iris-analyzer">github.com/dheiver2/iris-analyzer</a><br>
+    Ferramenta educacional de bem-estar — não é dispositivo médico.
+  </div>
+</footer>
+
+</body>
+</html>
