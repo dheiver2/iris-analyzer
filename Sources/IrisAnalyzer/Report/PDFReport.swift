@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 import CoreGraphics
 
-/// Gera o laudo em PDF nativamente com Core Graphics/AppKit (sem ReportLab).
+/// Gera o laudo em PDF nativamente com Core Graphics/AppKit.
 enum PDFReport {
 
     enum ReportError: Error { case contextFailed }

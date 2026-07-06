@@ -1,25 +1,24 @@
 # Iris Analyzer — Nativo macOS (Swift)
 
-Reescrita **100% nativa** do Iris Analyzer em **Swift + SwiftUI**, sem Python,
-sem Qt, sem MediaPipe. Pipeline de visão computacional reimplementado sobre
-frameworks da Apple.
+App **100% nativo** de análise de imagem da íris (bem-estar), escrito em
+**Swift + SwiftUI** sobre os frameworks da Apple. Sem dependências externas.
 
 > ⚠️ A iridologia **não é reconhecida pela ciência** como método de diagnóstico.
 > Este app é **educacional/bem-estar** e não substitui avaliação médica.
 
 ## Stack nativa
 
-| Camada | Original (Python) | Nativo (este projeto) |
-|---|---|---|
-| UI | PyQt6 | **SwiftUI** (tema escuro rebrandizado, acento índigo/ciano) |
-| Câmera | OpenCV/AVFoundation | **AVFoundation** direto |
-| Landmarks faciais | MediaPipe FaceLandmarker | **Vision.framework** (`VNDetectFaceLandmarksRequest`) |
-| Segmentação (Daugman) | OpenCV/NumPy | **Swift + Accelerate** (`Daugman.swift`) |
-| Normalização polar | NumPy | **Swift** (`Normalization.swift`) |
-| Textura (LBP/GLCM/Gabor) | scikit-image | **Swift + Accelerate** (`Texture.swift`) |
-| Cor Lab | OpenCV | **Core Graphics** (`ColorFeatures.swift`) |
-| Qualidade multi-fator | Python | **Swift** (`Quality.swift`) |
-| Laudo PDF | ReportLab | **Core Graphics/AppKit PDF** (`PDFReport.swift`) |
+| Camada | Tecnologia |
+|---|---|
+| Interface | **SwiftUI** (tema escuro, acento índigo/ciano) |
+| Câmera | **AVFoundation** |
+| Landmarks faciais | **Vision.framework** (`VNDetectFaceLandmarksRequest`) |
+| Segmentação (Daugman) | **Swift + Accelerate** (`Daugman.swift`) |
+| Normalização polar | **Swift** (`Normalization.swift`) |
+| Textura (LBP/GLCM/Gabor) | **Swift + Accelerate** (`Texture.swift`) |
+| Cor Lab | **Core Graphics** (`ColorFeatures.swift`) |
+| Qualidade multi-fator | **Swift** (`Quality.swift`) |
+| Laudo PDF | **Core Graphics / AppKit** (`PDFReport.swift`) |
 
 ## Como compilar e rodar
 
@@ -76,7 +75,11 @@ Hoje o app é assinado **ad-hoc**. Para distribuição/edital:
 
 ## Estado atual (fase 1)
 
-Compila e roda como app nativo. O pipeline de CV está implementado em primeira
-versão funcional; os parâmetros (Daugman, Gabor, limiares de qualidade) ainda
-precisam de **calibração comparando com a referência Python** para paridade de
-resultados. Ver `CHANGELOG` do commit.
+Compila e roda como app nativo. O pipeline de visão computacional está
+implementado em primeira versão funcional; os parâmetros (Daugman, Gabor,
+limiares de qualidade) ainda passam por **calibração** para refinar os
+resultados. Há um modo headless para validar o pipeline em imagens:
+
+```bash
+swift run IrisAnalyzer --analyze /caminho/para/foto.jpg
+```
