@@ -1,5 +1,7 @@
 # Iris Analyzer — Nativo macOS (Swift)
 
+[![tests](https://github.com/dheiver2/iris-analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/dheiver2/iris-analyzer/actions/workflows/tests.yml)
+
 App **100% nativo** de análise de imagem da íris (bem-estar), escrito em
 **Swift + SwiftUI** sobre os frameworks da Apple. Sem dependências externas.
 
@@ -37,6 +39,24 @@ Para desenvolvimento rápido:
 ```bash
 swift run                    # roda direto (a câmera pode exigir o bundle .app)
 ```
+
+## Testes
+
+O pipeline de visão computacional tem uma suíte de testes determinísticos
+(29 casos) sobre imagens sintéticas de formas conhecidas:
+
+```bash
+bash run_tests.sh            # compila e roda os testes
+# ou:
+swift run IrisAnalyzer --test
+```
+
+Os testes usam um runner em Swift puro (acionado por `--test`), que funciona
+apenas com o Command Line Tools — sem exigir o Xcode completo, necessário pelo
+`swift test`/XCTest. Cobrem: amostragem/recorte de imagem, operador de Daugman,
+detecção de pupila, textura (LBP/GLCM/Gabor/nitidez/reflexo), normalização
+polar, qualidade multi-fator, biometria, cor Lab e geração do ícone. Também
+rodam no CI (GitHub Actions, runner macOS).
 
 ## Estrutura
 

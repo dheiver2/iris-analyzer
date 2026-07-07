@@ -19,6 +19,9 @@ struct Main {
             IconMaker.write(to: args[i + 1])
             exit(0)
         }
+        if args.contains("--test") {
+            exit(SelfTest.run())
+        }
         IrisAnalyzerApp.main()
     }
 }
