@@ -34,6 +34,18 @@ bash build_app.sh            # monta "Iris Analyzer.app" na Área de Trabalho
 Primeira execução: clique com o botão direito no app → **Abrir** (não notarizado).
 Autorize a câmera quando solicitado.
 
+## Acesso (login)
+
+O app abre numa tela de login. Credenciais padrão:
+
+| Usuário | Senha |
+|---|---|
+| `admin` | `admin` |
+
+Dá para trocar sem recompilar via variáveis de ambiente `IRIS_USER` / `IRIS_PASS`.
+⚠️ É um gate local simples (credenciais em texto) — para produção/edital,
+migrar para Keychain com hash e/ou provedor de identidade.
+
 Para desenvolvimento rápido:
 
 ```bash

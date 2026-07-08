@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @StateObject private var vm = AnalysisViewModel()
+    @EnvironmentObject private var auth: Auth
     private let ticker = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -43,6 +44,16 @@ struct RootView: View {
             Text(vm.camera.running ? "● CÂMERA ATIVA" : "○ CÂMERA")
                 .font(.system(size: 10, weight: .semibold)).tracking(0.5)
                 .foregroundStyle(vm.camera.running ? Brand.cyan : Brand.faint)
+            Button {
+                vm.stop()
+                auth.logout()
+            } label: {
+                Label("Sair", systemImage: "rectangle.portrait.and.arrow.right")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Brand.muted)
+            .padding(.leading, 8)
         }
         .padding(.horizontal, 20).padding(.vertical, 14)
         .background(Brand.bgElev)
