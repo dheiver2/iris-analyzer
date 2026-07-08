@@ -54,7 +54,7 @@ struct CameraPreview: View {
                     y: map(CGPoint(x: pupil.cx - pupil.r, y: pupil.cy - pupil.r)).y,
                     width: pupil.r * 2 * scale, height: pupil.r * 2 * scale)
                 ctx.stroke(Path(ellipseIn: pupRect),
-                           with: .color(Brand.cyan), lineWidth: 1.5)
+                           with: .color(Brand.accent2), lineWidth: 1.5)
             }
         }
     }

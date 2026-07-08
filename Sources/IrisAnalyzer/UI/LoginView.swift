@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Tela de login rebrandizada (tema escuro + acento índigo). Credenciais
-/// padrão: admin / admin (ver `Auth`).
+/// Tela de login no estilo macOS nativo moderno (material translúcido, controles
+/// do sistema). Credenciais padrão: admin / admin (ver `Auth`).
 struct LoginView: View {
     @EnvironmentObject private var auth: Auth
     @State private var user = ""
@@ -11,90 +11,60 @@ struct LoginView: View {
 
     var body: some View {
         ZStack {
-            Brand.bg.ignoresSafeArea()
-            // brilho radial de fundo
-            RadialGradient(colors: [Brand.accent.opacity(0.18), .clear],
-                           center: .top, startRadius: 10, endRadius: 420)
+            VisualEffectBackground(material: .underWindowBackground).ignoresSafeArea()
+            RadialGradient(colors: [Brand.accent.opacity(0.22), .clear],
+                           center: .top, startRadius: 10, endRadius: 460)
                 .ignoresSafeArea()
 
-            VStack(spacing: 22) {
-                logo
+            VStack(spacing: 20) {
+                IrisMark(size: 68)
+                    .shadow(color: Brand.accent.opacity(0.4), radius: 18)
+
                 VStack(spacing: 3) {
-                    Text("IRIS ANALYZER")
-                        .font(.system(size: 20, weight: .bold)).tracking(2)
-                        .foregroundStyle(Brand.text)
-                    Text("acesso restrito")
-                        .font(.system(size: 11)).tracking(0.5)
-                        .foregroundStyle(Brand.muted)
+                    Text("Iris Analyzer").font(.title2.weight(.bold))
+                    Text("Acesso restrito").font(.callout).foregroundStyle(.secondary)
                 }
 
                 VStack(spacing: 12) {
-                    field(icon: "person", placeholder: "Usuário", text: $user,
-                          secure: false, field: .user, next: .pass)
-                    field(icon: "lock", placeholder: "Senha", text: $pass,
-                          secure: true, field: .pass, next: nil)
+                    TextField("Usuário", text: $user)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($focus, equals: .user)
+                        .onSubmit { focus = .pass }
+                    SecureField("Senha", text: $pass)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($focus, equals: .pass)
+                        .onSubmit(submit)
 
                     if let err = auth.error {
                         Label(err, systemImage: "exclamationmark.circle.fill")
-                            .font(.system(size: 11)).foregroundStyle(Brand.red)
+                            .font(.caption).foregroundStyle(Brand.red)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
                     Button(action: submit) {
-                        Label("Entrar", systemImage: "arrow.right.circle.fill")
+                        Text("Entrar").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .padding(.top, 4)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .tint(Brand.accent)
+                    .keyboardShortcut(.defaultAction)
+                    .padding(.top, 2)
                 }
-                .frame(width: 300)
+                .frame(width: 280)
 
                 Text("Ferramenta educacional de bem-estar — não é dispositivo médico.")
-                    .font(.system(size: 9)).foregroundStyle(Brand.faint)
-                    .multilineTextAlignment(.center).frame(width: 280)
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center).frame(width: 260)
             }
-            .padding(36)
-            .frame(width: 380)
-            .brandCard(highlighted: true)
+            .padding(34)
+            .frame(width: 360)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Brand.border, lineWidth: 1))
+            .shadow(color: .black.opacity(0.25), radius: 30, y: 12)
         }
         .onAppear { focus = .user }
     }
 
-    private var logo: some View {
-        ZStack {
-            SwiftUI.Circle().fill(Brand.brandGradient).frame(width: 64, height: 64)
-                .shadow(color: Brand.accent.opacity(0.5), radius: 20)
-            SwiftUI.Circle().stroke(Brand.bg, lineWidth: 6).frame(width: 30, height: 30)
-            SwiftUI.Circle().fill(Brand.bg).frame(width: 18, height: 18)
-            SwiftUI.Circle().fill(.white.opacity(0.9)).frame(width: 6, height: 6)
-                .offset(x: -4, y: -4)
-        }
-    }
-
-    private func field(icon: String, placeholder: String, text: Binding<String>,
-                       secure: Bool, field: Field, next: Field?) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon).font(.system(size: 13))
-                .foregroundStyle(Brand.muted).frame(width: 16)
-            Group {
-                if secure {
-                    SecureField(placeholder, text: text).onSubmit(submit)
-                } else {
-                    TextField(placeholder, text: text)
-                        .onSubmit { if next != nil { focus = next } }
-                }
-            }
-            .textFieldStyle(.plain)
-            .font(.system(size: 13))
-            .focused($focus, equals: field)
-        }
-        .padding(.horizontal, 12).padding(.vertical, 11)
-        .background(Brand.bgElev)
-        .clipShape(RoundedRectangle(cornerRadius: 9))
-        .overlay(RoundedRectangle(cornerRadius: 9)
-            .stroke(focus == field ? Brand.accent : Brand.border, lineWidth: 1))
-    }
-
-    private func submit() {
-        auth.login(user: user, pass: pass)
-    }
+    private func submit() { auth.login(user: user, pass: pass) }
 }

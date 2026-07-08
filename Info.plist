@@ -10,7 +10,7 @@
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleExecutable</key><string>IrisAnalyzer</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
-    <key>LSMinimumSystemVersion</key><string>13.0</string>
+    <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSCameraUsageDescription</key><string>O Iris Analyzer usa a câmera para capturar a imagem da íris para análise de bem-estar. Nenhuma imagem é enviada para servidores.</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
