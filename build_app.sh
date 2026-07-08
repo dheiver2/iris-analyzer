@@ -45,6 +45,14 @@ else
   echo "✓ Assinado (ad-hoc, sem hardened runtime)"
 fi
 
-echo "✓ App criado: $APP"
+# Força o Finder/Dock a exibir o ícone novo (evita cache de ícone antigo no
+# mesmo caminho do .app).
+touch "$APP"
+LSREG="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+[ -x "$LSREG" ] && "$LSREG" -f "$APP" 2>/dev/null || true
+rm -rf "$HOME/Library/Caches/com.apple.iconservices.store" 2>/dev/null || true
+killall Dock 2>/dev/null || true
+
+echo "✓ App criado: $APP  (ícone atualizado)"
 echo "  Primeira execução: clique direito → Abrir (app não notarizado)."
 echo "  Se a câmera não pedir permissão: tccutil reset Camera br.com.dheiver.irisanalyzer.native"
