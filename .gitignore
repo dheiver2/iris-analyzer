@@ -9,3 +9,7 @@ Package.resolved
 # App gerado
 *.app
 *.dmg
+
+# Artefatos de análise
+laudo_*
+*.jpg
